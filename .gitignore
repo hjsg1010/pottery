@@ -1,0 +1,4 @@
+data/
+log/
+*.h5
+*.npy

@@ -1,0 +1,47 @@
+Namespace(batch_size=4, dump_dir='dump', gpu=0, model='dgcnn', model_path='log/model.ckpt', num_point=1024, visu=False)
+Model restored.
+----0----
+----1----
+eval mean loss: 1.440412
+eval accuracy: 0.912885
+eval avg class acc: 0.887424
+  airplane:	1.000
+   bathtub:	0.940
+       bed:	0.990
+     bench:	0.750
+ bookshelf:	0.960
+    bottle:	0.970
+      bowl:	1.000
+       car:	1.000
+     chair:	0.960
+      cone:	1.000
+       cup:	0.700
+   curtain:	0.950
+      desk:	0.860
+      door:	0.950
+   dresser:	0.733
+flower_pot:	0.200
+ glass_box:	0.940
+    guitar:	1.000
+  keyboard:	1.000
+      lamp:	0.900
+    laptop:	1.000
+    mantel:	0.960
+   monitor:	1.000
+night_stand:	0.814
+    person:	0.950
+     piano:	0.950
+     plant:	0.790
+     radio:	0.800
+range_hood:	0.960
+      sink:	0.850
+      sofa:	0.970
+    stairs:	0.900
+     stool:	0.850
+     table:	0.810
+      tent:	0.950
+    toilet:	0.980
+  tv_stand:	0.900
+      vase:	0.810
+  wardrobe:	0.600
+      xbox:	0.850
