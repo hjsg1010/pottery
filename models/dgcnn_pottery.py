@@ -104,38 +104,38 @@ def get_model(point_cloud, is_training, bn_decay=None):
 
 
 
-print("reduce_sum", net.shape)
-print(net)
+    print("reduce_sum", net.shape)
+    print(net)
 
 
-# 2 average shards' featre
-#  net = tf.reduce_mean(net,0, kee_dims=True)
+    # 2 average shards' featre
+    #  net = tf.reduce_mean(net,0, kee_dims=True)
 
-# 3 mutiply transpose matrix : B*1024 X 1024*B -> B*B or 1024*B X B*1024 -> 1024*1024
-#  net = tf.matmul(net,net,transpose_b=True) #shape=B*B
-#  net = tf_util.conv2d(net,1024,[1,1],padding='VALID', stride=[1,1], bn=True, is_training=is_training, scope='agg', bn_decay=bn_decay)p
-#  print(net.shape)
+    # 3 mutiply transpose matrix : B*1024 X 1024*B -> B*B or 1024*B X B*1024 -> 1024*1024
+    #  net = tf.matmul(net,net,transpose_b=True) #shape=B*B
+    #  net = tf_util.conv2d(net,1024,[1,1],padding='VALID', stride=[1,1], bn=True, is_training=is_training, scope='agg', bn_decay=bn_decay)p
+    #  print(net.shape)
 
 
-#  print(net.shape)
-net = skip_dense(net, 1024, 10, 0.1, is_training)
-print("skip_dense: ", net.shape)
-== == == =
+    #  print(net.shape)
+    net = skip_dense(net, 1024, 10, 0.1, is_training)
+    print("skip_dense: ", net.shape)
+    == == == =
 
-net = skip_dense(net, 1024, 10, 0.1, is_training)
-#net = tf.layers.batch_normalization(net, training=is_training)
-#net = tf.nn.relu(net)
-net = tf.contrib.layers.fully_connected(
-    net, 512, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc1')
-net = tf.contrib.layers.dropout(
-    net, keep_prob=0.5, is_training=is_training, scope='dp1')
-net = tf.contrib.layers.fully_connected(
-    net, 256, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc2')
-net = tf.contrib.layers.dropout(
-    net, keep_prob=0.5, is_training=is_training, scope='dp2')
-net = tf.contrib.layers.fully_connected(
-    net, 5, activation_fn=None, scope='fc3')
-print("final net: ", net.shape)
+    net = skip_dense(net, 1024, 10, 0.1, is_training)
+    #net = tf.layers.batch_normalization(net, training=is_training)
+    #net = tf.nn.relu(net)
+    net = tf.contrib.layers.fully_connected(
+        net, 512, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc1')
+    net = tf.contrib.layers.dropout(
+        net, keep_prob=0.5, is_training=is_training, scope='dp1')
+    net = tf.contrib.layers.fully_connected(
+        net, 256, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc2')
+    net = tf.contrib.layers.dropout(
+        net, keep_prob=0.5, is_training=is_training, scope='dp2')
+    net = tf.contrib.layers.fully_connected(
+        net, 5, activation_fn=None, scope='fc3')
+    print("final net: ", net.shape)
 #  print(net.shape)
 
 
@@ -149,7 +149,7 @@ print("final net: ", net.shape)
 #                        scope='dp2') #shape = batch * 256
 #  net = tf_util.fully_connected(net, 5, activation_fn=None, scope='fc3') #shape = batch * 5
 
-return net, end_points
+    return net, end_points    
 
 
 def get_loss(pred, label, end_points):
