@@ -106,14 +106,14 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
     net = skip_dense(net, 1024, 10, 0.1, is_training)
     #net = tf.layers.batch_normalization(net, training=is_training)
     #net = tf.nn.relu(net)
-    net = tf.contrib.layers.fully_connected(
-        net, 512, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc1')
-    net = tf.contrib.layers.dropout(
-        net, keep_prob=0.5, is_training=is_training, scope='dp1')
-    net = tf.contrib.layers.fully_connected(
-        net, 256, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc2')
-    net = tf.contrib.layers.dropout(
-        net, keep_prob=0.5, is_training=is_training, scope='dp2')
+    # net = tf.contrib.layers.fully_connected(
+    #     net, 512, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc1')
+    # net = tf.contrib.layers.dropout(
+    #     net, keep_prob=0.5, is_training=is_training, scope='dp1')
+    # net = tf.contrib.layers.fully_connected(
+    #     net, 256, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc2')
+    # net = tf.contrib.layers.dropout(
+    #     net, keep_prob=0.5, is_training=is_training, scope='dp2')
     net = tf.contrib.layers.fully_connected(
         net, 5, activation_fn=None, scope='fc3')
 #  print(net.shape)
