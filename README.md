@@ -14,7 +14,7 @@
 
 ## Segmentation Model
 
-![segmentation model](./images/segementation_model.png)
+![segmentation model](./images/segmentation_model.png)
 
   
 
