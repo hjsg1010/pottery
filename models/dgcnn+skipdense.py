@@ -12,8 +12,7 @@ sys.path.append(os.path.join(BASE_DIR, '../../utils'))
 
 
 def placeholder_inputs(batch_size, num_point):
-    pointclouds_pl = tf.placeholder(
-        tf.float32, shape=(batch_size, num_point, 3))
+    pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 3))
     labels_pl = tf.placeholder(tf.int32, shape=(batch_size))
     return pointclouds_pl, labels_pl
 
@@ -132,8 +131,7 @@ def get_loss(pred, label, end_points):
     #loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=pred, label_smoothing=0.2)
     classify_loss = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=pred))
-    reg_loss = tf.reduce_mean(tf.get_collection(
-        tf.GraphKeys.REGULARIZATION_LOSSES))
+    reg_loss = tf.reduce_mean(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
     loss = classify_loss + reg_loss
     return loss
 

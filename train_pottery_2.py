@@ -110,7 +110,6 @@ def train():
         with tf.device('/gpu:'+str(GPU_INDEX)):
 			# batchsize = 1
             pointclouds_pl, labels_pl = MODEL.placeholder_inputs(BATCH_SIZE, NUM_POINT)
-            #pointclouds_pl, labels_pl = MODEL.placeholder_inputs(None, NUM_POINT)
             is_training_pl = tf.placeholder(tf.bool, shape=())
             print(is_training_pl)
             
@@ -129,8 +128,6 @@ def train():
             loss = MODEL.get_loss(pred, labels_pl, end_points)
             tf.summary.scalar('loss', loss)
 
-#            correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels_pl))
-#            accuracy = tf.reduce_sum(tf.cast(correct, tf.float32)) / float(BATCH_SIZE)
             correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels_pl))
             accuracy = tf.reduce_sum(tf.cast(correct, tf.float32))
             #tf.summary.scalar('accuracy', accuracy)

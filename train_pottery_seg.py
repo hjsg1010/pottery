@@ -19,7 +19,7 @@ parser.add_argument('--gpu', type=int, default=0,
                     help='GPU to use [default: GPU 0]')
 parser.add_argument('--model', default='dgcnn_pottery_seg',
                     help='Model name: dgcnn_pottery, dgcnn+skipdense, dgcnn_pottery_seg')
-parser.add_argument('--log_dir', default='log', help='Log dir [default: log]')
+parser.add_argument('--log_dir', default='log_seg', help='Log dir [default: log]')
 parser.add_argument('--num_point', type=int, default=2048,
                     help='Point Number [256/512/1024/2048] [default: 2048]')
 parser.add_argument('--max_epoch', type=int, default=100,
@@ -69,8 +69,8 @@ BN_DECAY_CLIP = 0.99
 HOSTNAME = socket.gethostname()
 
 
-TRAIN_FILES = provider.getDataFiles('./data/train_files.txt')
-TEST_FILES = provider.getDataFiles('./data/test_files.txt')
+TRAIN_FILES = provider.getDataFiles('./data/segh5/train_files.txt')
+TEST_FILES = provider.getDataFiles('./data/segh5/test_files.txt')
 
 val_acc = None
 val_acc_summary = tf.Summary()
@@ -129,19 +129,20 @@ def train():
             # Get model and loss
             # pred, end_points = MODEL.get_model(pointclouds_pl, is_training_pl, bn_decay=bn_decay)
             pred, end_points = MODEL.get_model(pointclouds_pl, filters, is_training_pl, bn_decay=bn_decay)
+            # print("pred.shape: ", pred.shape, "label.shape: ", labels_pl.shape)
+            # print("label.shape: ", labels_pl.shape, "filter.shape: ", filters.shape)
+            # print(filters)
             loss = MODEL.get_seg_loss(pred, labels_pl, end_points)
+            # loss = MODEL.get_seg_loss(pred, label, end_points)
             tf.summary.scalar('loss', loss)
 
-#            correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels_pl))
-#            accuracy = tf.reduce_sum(tf.cast(correct, tf.float32)) / float(BATCH_SIZE)
-            # print("pred.shape: ", tf.argmax(pred, 1).shape,"labels_pl: ", labels_pl.shape)
-            correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels_pl))
+            print("pred.shape: ", tf.argmax(pred,0).shape, "label.shape: ", tf.to_int64(labels_pl).shape)
+            correct = tf.equal(tf.argmax(pred, 0), tf.to_int64(labels_pl))
+            # correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels_pl))
             accuracy = tf.reduce_sum(tf.cast(correct, tf.float32))
             # tf.summary.scalar('accuracy', accuracy)
-            total_acc_summary.value.add(
-                tag='train_accuracy', simple_value=total_acc)
-            val_acc_summary.value.add(
-                tag='test_accuracy', simple_value=val_acc)
+            total_acc_summary.value.add(tag='train_accuracy', simple_value=total_acc)
+            val_acc_summary.value.add(tag='test_accuracy', simple_value=val_acc)
 
 #            filter_summary=tf.summary.image(filter)
             # Get training operator
@@ -193,7 +194,7 @@ def train():
                'train_op': train_op,
                'merged': merged,
                'step': batch,
-#               'filters': filters,
+               'filters': filters,
               }
 
         for epoch in range(MAX_EPOCH):
@@ -260,15 +261,15 @@ def train_one_epoch(sess, ops, train_writer):
                      ops['is_training_pl']: is_training,
                     ops['filters']: filters,
                     }
-        summary, step, _, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
-            ops['train_op'], ops['loss'], ops['pred']], feed_dict=feed_dict)
+        
+        summary, step, _, loss_val, pred_val = sess.run([ops['merged'], ops['step'], ops['train_op'], ops['loss'], ops['pred']], feed_dict=feed_dict)
 
         train_writer.add_summary(summary, step)
         
         
         # print('pred_val:', pred_val)
-        pred_val = np.argmax(pred_val, 1)
-        # print('pred, label, loss:', pred_val[0], current_label[0], loss_val)
+        # pred_val = np.argmax(pred_val, 0)
+        print('pred, label, loss:', pred_val[0], current_label[0], loss_val)
         correct = np.sum(pred_val[0] == current_label[0])
         total_correct += correct
         total_seen += num_batches
@@ -327,7 +328,7 @@ def eval_one_epoch(sess, ops, test_writer):
                     }
         summary, step, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
             ops['loss'], ops['pred']], feed_dict=feed_dict)
-        pred_val = np.argmax(pred_val, 1)
+        pred_val = np.argmax(pred_val, 0)
 #            print("pred_val.shape: ", pred_val.shape)
 #            print("pred_val.value: ", pred_val)
 #            print("current_label index value: ", current_label[0])

@@ -1,5 +1,3 @@
-from transform_nets import input_transform_net
-import tf_util
 import tensorflow as tf
 import numpy as np
 import math
@@ -9,16 +7,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, '../utils'))
 sys.path.append(os.path.join(BASE_DIR, '../../utils'))
+from transform_nets import input_transform_net
+import tf_util
 
 
 def placeholder_inputs(batch_size, num_point):
     pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 3))
-    labels_pl = tf.placeholder(tf.int32, shape=(batch_size))
-    return pointclouds_pl, labels_pl
-
-def placeholder_inputs(batch_size, num_point):
-    pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 3))
-    labels_pl = tf.placeholder(tf.int32, shape=(batch_size))
+    labels_pl = tf.placeholder(tf.float32, shape=(batch_size, 4)) 
     return pointclouds_pl, labels_pl
 
 
@@ -103,8 +98,8 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
 
     # 1 sum  shards' feature (except additional padding shards)
     # print(filters)
-    # net = tf.multiply(net, filters)   # remove additional padding shards
-    # net = tf.reduce_sum(net, 0, keep_dims=True)
+    net = tf.multiply(net, filters)   # remove additional padding shards
+    # net = tf.reduce_sum(net, 0, keep_dims=True) 
 
 
     # print("reduce_sum", net.shape)
@@ -116,41 +111,19 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
     # print("reduce_mean: ", net.shape)
 
 # 3 mutiply transpose matrix : B*1024 X 1024*B -> B*B or 1024*B X B*1024 -> 1024*1024
-#  net = tf.matmul(net,net,transpose_b=True) #shape=B*B
-#  net = tf_util.conv2d(net,1024,[1,1],padding='VALID', stride=[1,1], bn=True, is_training=is_training, scope='agg', bn_decay=bn_decay)p
-#  print(net.shape)
+    # net = tf.matmul(net,net,transpose_b=True) #shape=B*B
+    # net = tf_util.conv2d(net,1024,[1,1],padding='VALID', stride=[1,1], bn=True, is_training=is_training, scope='agg', bn_decay=bn_decay)p
+    # print(net.shape)
 
 
 #  print(net.shape)
 
     net = skip_dense(net, 1024, 10, 0.1, is_training)
-    # print("skip_dense: ", net.shape)
 
-    #net = tf.layers.batch_normalization(net, training=is_training)
-    #net = tf.nn.relu(net)
-    net = tf.contrib.layers.fully_connected(
-        net, 512, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc1')
-    net = tf.contrib.layers.dropout(
-        net, keep_prob=0.5, is_training=is_training, scope='dp1')
-    net = tf.contrib.layers.fully_connected(
-        net, 256, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc2')
-    net = tf.contrib.layers.dropout(
-        net, keep_prob=0.5, is_training=is_training, scope='dp2')
     net = tf.contrib.layers.fully_connected(
         net, 4, activation_fn=tf.nn.sigmoid, scope='fc3')  # change activation function to sigmoid
     print("final net: ", net.shape)
     #  print(net.shape)
-
-
-    # net = tf_util.fully_connected(net, 512, bn=True, is_training=is_training,
-    #                             scope='fc1', bn_decay=bn_decay) #shape = batch * 512
-    # net = tf_util.dropout(net, keep_prob=0.5, is_training=is_training,
-    #                         scope='dp1') #shape = batch * 512
-    # net = tf_util.fully_connected(net, 256, bn=True, is_training=is_training,
-    #                             scope='fc2', bn_decay=bn_decay) #shape = batch * 256
-    # net = tf_util.dropout(net, keep_prob=0.5, is_training=is_training,
-    #                     scope='dp2') #shape = batch * 256
-    # net = tf_util.fully_connected(net, 5, activation_fn=None, scope='fc3') #shape = batch * 5
 
     return net, end_points
 
@@ -164,8 +137,7 @@ def get_loss(pred, label, end_points):
     #print(labels.get_shape(), pred.get_shape())
 
     #loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=pred, label_smoothing=0.2)
-    classify_loss = tf.reduce_mean(                
-        tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=pred))
+    classify_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=pred))
     reg_loss = tf.reduce_mean(tf.get_collection(
         tf.GraphKeys.REGULARIZATION_LOSSES))
     loss = classify_loss + reg_loss
@@ -173,7 +145,7 @@ def get_loss(pred, label, end_points):
 
 
 def get_seg_loss(seg_pred, seg_label, end_points):
-    part_loss = tf.nn.sigmoid_cross_entropy_with_logits(labels=seg_label, logits=seg_pred)
+    part_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=seg_label, logits=seg_pred))
     reg_loss = tf.reduce_mean(tf.get_collection(
         tf.GraphKeys.REGULARIZATION_LOSSES))
     loss = part_loss + reg_loss

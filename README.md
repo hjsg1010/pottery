@@ -10,7 +10,13 @@
 
 ![classification model](./images/classification_model.png)
 
+  
 
+## Segmentation Model
+
+![segmentation model](./images/segementation_model.png)
+
+  
 
 ## DATA PREPARING
 run make_filelist.ipynb ### 도자기 별 shards list  

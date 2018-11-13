@@ -161,7 +161,7 @@ def loadDataFile(filename):
 
 def load_h5_data_label_seg(h5_filename):
     # print(h5_filename)
-    f = h5py.File(h5_filename)
+    f = h5py.File('./data/segh5/'+h5_filename)
     data = f['data'][:]  # (2048, 2048, 3)
     # label = f['label'][:]  # (2048, 1)
     seg = f['seg'][:]  # (2048, 4)
