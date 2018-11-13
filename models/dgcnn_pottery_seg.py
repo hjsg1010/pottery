@@ -94,21 +94,26 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
 
     # MLP on global point cloud vector
     net = tf.reshape(net, [batch_size, -1])
-    # print(net)
+    print("reshape: ", net.shape)
 
     # 1 sum  shards' feature (except additional padding shards)
     # print(filters)
     net = tf.multiply(net, filters)   # remove additional padding shards
-    # net = tf.reduce_sum(net, 0, keep_dims=True) 
+    print("filtered net: ", net.shape)
 
+    # net = tf.matmul(net, net, transpose_b=True)
+    # print("matmul: ", net.shape)
+    
+    merged_net = tf.reduce_sum(net, 0, keep_dims=True) 
+    print("reduce_sum: ", merged_net.shape)
+    # merged_net = tf.matmul(merged_net, merged_net, transpose_a=True)
+    # print("merged_net: ", merged_net.shape)
 
-    # print("reduce_sum", net.shape)
-    # print(net)
-
-
-# 2 average shards' featre
-    # net = tf.reduce_mean(net, 0, keep_dims=True)
-    # print("reduce_mean: ", net.shape)
+    # net = tf.matmul(net, merged_net)
+    # print("asdfaf: ", net.shape)
+    
+    net = tf.multiply(net,merged_net)
+    print("multiply net: ", net.shape)
 
 # 3 mutiply transpose matrix : B*1024 X 1024*B -> B*B or 1024*B X B*1024 -> 1024*1024
     # net = tf.matmul(net,net,transpose_b=True) #shape=B*B
@@ -119,10 +124,12 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
 #  print(net.shape)
 
     net = skip_dense(net, 1024, 10, 0.1, is_training)
+    print("skip_dense: ", net.shape)
 
     net = tf.contrib.layers.fully_connected(
         net, 4, activation_fn=tf.nn.sigmoid, scope='fc3')  # change activation function to sigmoid
     print("final net: ", net.shape)
+    # sys.exit()
     #  print(net.shape)
 
     return net, end_points
@@ -148,7 +155,7 @@ def get_seg_loss(seg_pred, seg_label, end_points):
     part_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=seg_label, logits=seg_pred))
     reg_loss = tf.reduce_mean(tf.get_collection(
         tf.GraphKeys.REGULARIZATION_LOSSES))
-    loss = part_loss + reg_loss
+    loss = part_loss #+ reg_loss
     return loss
 
 

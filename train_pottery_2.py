@@ -144,6 +144,12 @@ def train():
             elif OPTIMIZER == 'adam':
                 #optimizer = tf.train.AdamOptimizer(learning_rate)
                 optimizer = tf.train.AdamOptimizer()
+                
+            # gvs = optimizer.compute_gradients(loss)
+            # capped_gvs=[(tf.clip_by_value(grad,-1.,1.),var) for grad, var in gvs]
+            # train_op = optimizer.apply_gradients(capped_gvs)
+            optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, clip_norm=1.0)
+
             train_op = optimizer.minimize(loss, global_step=batch)
             
 #            with tf.variable_scope('agg', reuse=True) as scope_conv:

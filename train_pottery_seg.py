@@ -132,13 +132,18 @@ def train():
             # print("pred.shape: ", pred.shape, "label.shape: ", labels_pl.shape)
             # print("label.shape: ", labels_pl.shape, "filter.shape: ", filters.shape)
             # print(filters)
+
+            
+            
             loss = MODEL.get_seg_loss(pred, labels_pl, end_points)
             # loss = MODEL.get_seg_loss(pred, label, end_points)
             tf.summary.scalar('loss', loss)
 
             print("pred.shape: ", tf.argmax(pred,0).shape, "label.shape: ", tf.to_int64(labels_pl).shape)
-            correct = tf.equal(tf.argmax(pred, 0), tf.to_int64(labels_pl))
-            # correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels_pl))
+            # correct = tf.equal(tf.argmax(pred, 0), tf.to_int64(labels_pl))
+            correct = tf.equal(tf.to_int64(pred),tf.to_int64(labels_pl))
+            print("correct: ", correct)
+            # sys.exit()
             accuracy = tf.reduce_sum(tf.cast(correct, tf.float32))
             # tf.summary.scalar('accuracy', accuracy)
             total_acc_summary.value.add(tag='train_accuracy', simple_value=total_acc)
@@ -155,6 +160,7 @@ def train():
             elif OPTIMIZER == 'adam':
                 # optimizer = tf.train.AdamOptimizer(learning_rate)
                 optimizer = tf.train.AdamOptimizer()
+            
             train_op = optimizer.minimize(loss, global_step=batch)
 
 #            with tf.variable_scope('agg', reuse=True) as scope_conv:
@@ -266,9 +272,6 @@ def train_one_epoch(sess, ops, train_writer):
 
         train_writer.add_summary(summary, step)
         
-        
-        # print('pred_val:', pred_val)
-        # pred_val = np.argmax(pred_val, 0)
         print('pred, label, loss:', pred_val[0], current_label[0], loss_val)
         correct = np.sum(pred_val[0] == current_label[0])
         total_correct += correct
