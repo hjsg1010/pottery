@@ -98,9 +98,9 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
     # 1 sum  shards' feature (except additional padding shards)
     # print(filters)
     net = tf.multiply(net, filters)   # remove additional padding shards
-    net = tf.reduce_sum(net, 0, keep_dims=True)
-    # net = tf.reduce_mean(net, 0, keep_dims=True)
-    print(net)
+    # net = tf.reduce_sum(net, 0, keep_dims=True)
+    net = tf.matmul(net,net,transpose_a=True)
+    print("matmul: ",net.shape)
 
     net = skip_dense(net, 1024, 10, 0.1, is_training)
     #net = tf.layers.batch_normalization(net, training=is_training)
@@ -113,9 +113,16 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
     #     net, 256, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc2')
     # net = tf.contrib.layers.dropout(
     #     net, keep_prob=0.5, is_training=is_training, scope='dp2')
-    net = tf.contrib.layers.fully_connected(
-        net, 5, activation_fn=None, scope='fc3')
-    print("final net: ", net.shape)
+    # net = tf.contrib.layers.flatten(net)
+    # print("flatten: ", net.shape)
+    net = tf.reshape(net, [1,-1])
+    # net = tf.contrib.layers.fully_connected(net, 1024, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc1')
+    # net = tf.contrib.layers.dropout(net, keep_prob=0.5, is_training=is_training, scope='dp1')
+    net = tf.contrib.layers.fully_connected(net, 256, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc2')
+    net = tf.contrib.layers.dropout(net, keep_prob=0.5, is_training=is_training, scope='dp2')
+    # print("reshpe: ", net.shape)
+    net = tf.contrib.layers.fully_connected(net, 5, activation_fn=None, scope='fc3')
+    print("final net: ",net.shape)   
 
     return net, end_points
 
