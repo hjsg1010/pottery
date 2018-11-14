@@ -11,12 +11,17 @@
 ![classification model](./images/classification_model.png)
 
   
+train: ./train_pottery_2.py  
+model: ./models/dgcnn+skipdense.py   
+
 
 ## Segmentation Model
 
 ![segmentation model](./images/segmentation_model.png)
 
-  
+
+train: ./train_pottery_seg.py  
+model: ./models/dgcnn_pottery_seg.py  
 
 ## DATA PREPARING
 run make_filelist.ipynb ### 도자기 별 shards list  
