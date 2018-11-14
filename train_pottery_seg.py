@@ -323,8 +323,14 @@ def eval_one_epoch(sess, ops, test_writer):
         start_idx = batch_idx * BATCH_SIZE
         end_idx = (batch_idx+1) * BATCH_SIZE
 
+        rotated_data = provider.rotate_point_cloud(current_data[start_idx:end_idx, :, :])
+        jittered_data = provider.jitter_point_cloud(rotated_data)
+        jittered_data = provider.random_scale_point_cloud(jittered_data)
+        jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
+        jittered_data = provider.shift_point_cloud(jittered_data)
 
-        feed_dict = {ops['pointclouds_pl']: current_data[start_idx:end_idx, :, :],
+
+        feed_dict = {ops['pointclouds_pl']: jittered_data,
                      ops['labels_pl']: current_label[start_idx:end_idx],
                      ops['is_training_pl']: is_training,
                     ops['filters']: filters,

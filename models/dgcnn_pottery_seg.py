@@ -115,14 +115,6 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
     net = tf.multiply(net,merged_net)
     print("multiply net: ", net.shape)
 
-# 3 mutiply transpose matrix : B*1024 X 1024*B -> B*B or 1024*B X B*1024 -> 1024*1024
-    # net = tf.matmul(net,net,transpose_b=True) #shape=B*B
-    # net = tf_util.conv2d(net,1024,[1,1],padding='VALID', stride=[1,1], bn=True, is_training=is_training, scope='agg', bn_decay=bn_decay)p
-    # print(net.shape)
-
-
-#  print(net.shape)
-
     net = skip_dense(net, 1024, 10, 0.1, is_training)
     print("skip_dense: ", net.shape)
 

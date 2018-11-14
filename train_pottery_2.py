@@ -145,9 +145,6 @@ def train():
                 #optimizer = tf.train.AdamOptimizer(learning_rate)
                 optimizer = tf.train.AdamOptimizer()
                 
-            # gvs = optimizer.compute_gradients(loss)
-            # capped_gvs=[(tf.clip_by_value(grad,-1.,1.),var) for grad, var in gvs]
-            # train_op = optimizer.apply_gradients(capped_gvs)
             optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, clip_norm=1.0)
 
             train_op = optimizer.minimize(loss, global_step=batch)
@@ -323,13 +320,24 @@ def eval_one_epoch(sess, ops, test_writer):
         batch_idx = 0
         start_idx = batch_idx * BATCH_SIZE
         end_idx = (batch_idx+1) * BATCH_SIZE
+        
+        rotated_data = provider.rotate_point_cloud(current_data[start_idx:end_idx, :, :])
+        jittered_data = provider.jitter_point_cloud(rotated_data)
+        jittered_data = provider.random_scale_point_cloud(jittered_data)
+        jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
+        jittered_data = provider.shift_point_cloud(jittered_data)
 
-
-        feed_dict = {ops['pointclouds_pl']: current_data[start_idx:end_idx, :, :],
+        feed_dict = {ops['pointclouds_pl']: jittered_data,
                      ops['labels_pl']: current_label[start_idx:end_idx],
                      ops['is_training_pl']: is_training,
                      ops['filters']: filters,
                     }
+        # feed_dict = {ops['pointclouds_pl']: current_data[start_idx:end_idx, :, :],
+        #              ops['labels_pl']: current_label[start_idx:end_idx],
+        #              ops['is_training_pl']: is_training,
+        #              ops['filters']: filters,
+        #             }
+                    
         summary, step, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
             ops['loss'], ops['pred']], feed_dict=feed_dict)
         pred_val = np.argmax(pred_val, 1)
