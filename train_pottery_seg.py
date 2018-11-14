@@ -174,7 +174,7 @@ def train():
             elif OPTIMIZER == 'adam':
                 # optimizer = tf.train.AdamOptimizer(learning_rate)
                 optimizer = tf.train.AdamOptimizer()
-                
+
             optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, clip_norm=1.0)
             train_op = optimizer.minimize(loss, global_step=batch)
 

@@ -2,3 +2,5 @@ data/
 log/
 *.h5
 *.npy
+log*/
+log_seg/
