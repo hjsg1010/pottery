@@ -118,8 +118,8 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
     net = skip_dense(net, 1024, 10, 0.1, is_training)
     print("skip_dense: ", net.shape)
 
-    net = tf.contrib.layers.fully_connected(
-        net, 4, activation_fn=tf.nn.sigmoid, scope='fc3')  # change activation function to sigmoid
+    net = tf.contrib.layers.fully_connected(net, 4, activation_fn = None, scope='fc3')
+    # net = tf.contrib.layers.fully_connected(net, 4, activation_fn=tf.nn.sigmoid, scope='fc3')  # change activation function to sigmoid
     print("final net: ", net.shape)
     # sys.exit()
     #  print(net.shape)
