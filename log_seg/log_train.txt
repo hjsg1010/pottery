@@ -1,0 +1,192 @@
+Namespace(batch_size=2, decay_rate=0.8, decay_step=200000, gpu=0, learning_rate=0.001, log_dir='log_seg', max_epoch=100, model='dgcnn_pottery_seg', momentum=0.9, num_point=2048, optimizer='adam')
+**** EPOCH 000 ****
+mean loss: 37036.817201
+accuracy: 0.753689
+mean loss: 37017.580975
+accuracy: 0.753686
+mean loss: 36988.733512
+accuracy: 0.753682
+mean loss: 36958.614145
+accuracy: 0.753884
+mean loss: 36947.987101
+accuracy: 0.753676
+mean loss: 36927.594147
+accuracy: 0.753673
+mean loss: 36922.210203
+accuracy: 0.753670
+mean loss: 36893.268619
+accuracy: 0.753667
+mean loss: 36865.538483
+accuracy: 0.753664
+mean loss: 36848.258483
+accuracy: 0.753662
+mean loss: 36832.106866
+accuracy: 0.753659
+mean loss: 36807.991014
+accuracy: 0.753452
+mean loss: 36781.945978
+accuracy: 0.753450
+mean loss: 36761.200898
+accuracy: 0.753447
+mean loss: 36731.534356
+accuracy: 0.753647
+mean loss: 36712.611078
+accuracy: 0.753644
+mean loss: 36694.964750
+accuracy: 0.753641
+mean loss: 36665.423687
+accuracy: 0.753840
+mean loss: 36650.092804
+accuracy: 0.753837
+mean loss: 20373.406706
+accuracy: 0.751004
+mean loss: 20365.564852
+accuracy: 0.750903
+mean loss: 20357.453927
+accuracy: 0.751003
+mean loss: 20349.488128
+accuracy: 0.751002
+mean loss: 20341.390143
+accuracy: 0.751102
+mean loss: 20333.452254
+accuracy: 0.751102
+mean loss: 20325.487582
+accuracy: 0.751101
+mean loss: 20317.536547
+accuracy: 0.751101
+mean loss: 20309.750635
+accuracy: 0.751100
+mean loss: 20303.115001
+accuracy: 0.751000
+mean loss: 20295.054966
+accuracy: 0.751100
+mean loss: 20287.551330
+accuracy: 0.751099
+mean loss: 20281.670255
+accuracy: 0.750899
+mean loss: 20273.628432
+accuracy: 0.750998
+mean loss: 20266.786470
+accuracy: 0.750998
+mean loss: 20259.557521
+accuracy: 0.750998
+mean loss: 14218.240175
+accuracy: 0.760069
+mean loss: 14218.584980
+accuracy: 0.760000
+mean loss: 14216.982276
+accuracy: 0.759931
+mean loss: 14213.229006
+accuracy: 0.759995
+mean loss: 14211.067955
+accuracy: 0.759925
+mean loss: 14207.967567
+accuracy: 0.759923
+mean loss: 14204.219689
+accuracy: 0.759987
+mean loss: 14200.729859
+accuracy: 0.759984
+mean loss: 14196.985898
+accuracy: 0.760048
+mean loss: 14193.243926
+accuracy: 0.760112
+mean loss: 14189.503944
+accuracy: 0.760176
+mean loss: 14185.765948
+accuracy: 0.760239
+mean loss: 14184.960216
+accuracy: 0.760170
+mean loss: 14183.851987
+accuracy: 0.760167
+mean loss: 14181.359353
+accuracy: 0.760165
+mean loss: 14177.934546
+accuracy: 0.760162
+mean loss: 14175.329241
+accuracy: 0.760159
+mean loss: 14172.522238
+accuracy: 0.760157
+mean loss: 14168.795679
+accuracy: 0.760220
+mean loss: 11007.537419
+accuracy: 0.770058
+mean loss: 11005.527784
+accuracy: 0.770054
+mean loss: 11003.424147
+accuracy: 0.770000
+mean loss: 11001.320403
+accuracy: 0.769946
+mean loss: 10999.898763
+accuracy: 0.769942
+mean loss: 10997.713661
+accuracy: 0.769988
+mean loss: 10995.529435
+accuracy: 0.770034
+mean loss: 10993.444180
+accuracy: 0.770030
+mean loss: 10991.261685
+accuracy: 0.770076
+mean loss: 10989.176043
+accuracy: 0.770072
+mean loss: 10987.068415
+accuracy: 0.770068
+mean loss: 10985.106258
+accuracy: 0.770014
+mean loss: 9024.408770
+accuracy: 0.773114
+mean loss: 9022.970857
+accuracy: 0.773111
+mean loss: 9021.551766
+accuracy: 0.773107
+mean loss: 9020.107182
+accuracy: 0.773144
+mean loss: 9018.663063
+accuracy: 0.773180
+mean loss: 9017.219411
+accuracy: 0.773217
+mean loss: 9015.776224
+accuracy: 0.773254
+mean loss: 9014.333502
+accuracy: 0.773291
+mean loss: 9012.935147
+accuracy: 0.773287
+mean loss: 7608.098124
+accuracy: 0.770210
+mean loss: 7607.080574
+accuracy: 0.770173
+mean loss: 7606.063593
+accuracy: 0.770170
+mean loss: 7605.054504
+accuracy: 0.770133
+mean loss: 7604.034799
+accuracy: 0.770097
+mean loss: 7603.015903
+accuracy: 0.770094
+mean loss: 7602.005078
+accuracy: 0.770057
+mean loss: 7600.985299
+accuracy: 0.770088
+mean loss: 7599.979196
+accuracy: 0.770086
+mean loss: 7598.959971
+accuracy: 0.770117
+mean loss: 7597.966236
+accuracy: 0.770114
+mean loss: 7596.947564
+accuracy: 0.770145
+mean loss: 7595.929171
+accuracy: 0.770177
+mean loss: 7594.911056
+accuracy: 0.770208
+mean loss: 7593.929992
+accuracy: 0.770171
+mean loss: 7592.948260
+accuracy: 0.770134
+mean loss: 7591.930967
+accuracy: 0.770166
+mean loss: 7590.941452
+accuracy: 0.770163
+mean loss: 7589.925140
+accuracy: 0.770160
+mean loss: 7588.908674
+accuracy: 0.770191
