@@ -274,3 +274,57 @@ mean loss: 5014.326297
 accuracy: 0.753365
 mean loss: 5013.882791
 accuracy: 0.753365
+mean loss: 4526.890039
+accuracy: 0.754604
+mean loss: 4526.527694
+accuracy: 0.754624
+mean loss: 4526.165408
+accuracy: 0.754623
+mean loss: 4525.803192
+accuracy: 0.754603
+mean loss: 4525.441021
+accuracy: 0.754602
+mean loss: 4525.078922
+accuracy: 0.754602
+mean loss: 4524.716865
+accuracy: 0.754602
+mean loss: 4524.354864
+accuracy: 0.754621
+mean loss: 4523.992922
+accuracy: 0.754621
+mean loss: 4523.631050
+accuracy: 0.754621
+mean loss: 4523.269223
+accuracy: 0.754620
+mean loss: 4522.907451
+accuracy: 0.754640
+mean loss: 4522.545737
+accuracy: 0.754640
+mean loss: 4522.184095
+accuracy: 0.754639
+mean loss: 4521.822509
+accuracy: 0.754639
+mean loss: 4130.493798
+accuracy: 0.753888
+mean loss: 4130.191738
+accuracy: 0.753906
+mean loss: 4129.889723
+accuracy: 0.753905
+mean loss: 4129.587947
+accuracy: 0.753905
+mean loss: 4129.286019
+accuracy: 0.753905
+mean loss: 4128.984359
+accuracy: 0.753886
+mean loss: 4128.682518
+accuracy: 0.753886
+mean loss: 4128.380722
+accuracy: 0.753867
+mean loss: 4128.078966
+accuracy: 0.753867
+mean loss: 4127.777256
+accuracy: 0.753848
+mean loss: 4127.475596
+accuracy: 0.753830
+mean loss: 4127.173972
+accuracy: 0.753811
