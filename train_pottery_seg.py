@@ -19,7 +19,7 @@ parser.add_argument('--gpu', type=int, default=0,
                     help='GPU to use [default: GPU 0]')
 parser.add_argument('--model', default='dgcnn_pottery_seg',
                     help='Model name: dgcnn_pottery, dgcnn+skipdense, dgcnn_pottery_seg')
-parser.add_argument('--log_dir', default='log_seg', help='Log dir [default: log]')
+parser.add_argument('--log_dir', default='logseg', help='Log dir [default: log]')
 parser.add_argument('--num_point', type=int, default=2048,
                     help='Point Number [256/512/1024/2048] [default: 2048]')
 parser.add_argument('--max_epoch', type=int, default=100,
@@ -255,27 +255,13 @@ def train_one_epoch(sess, ops, train_writer):
         file_size = int(TRAIN_FILES[train_file_idxs[fn]].split('_')[1])
         num_batches = 1
 
-    #         # create filters
-    #         ones = np.ones([file_size, 1024], np.int32)
-    #         zeros = np.zeros([BATCH_SIZE-file_size, 1024], np.int32)
-    # #        #print(ones.shape, zeros.shape)
-    #         if file_size == 20:
-    #             filters = ones
-    #         else:
-    #             filters = np.concatenate([ones, zeros], axis=0)
-    #         # print(filters.shape)
-
-            # # batch_idx => shard idx로 생각
-            # # for batch_idx in range(num_batches):
-            # batch_idx = 0
-            # start_idx = batch_idx * BATCH_SIZE
-            # end_idx = (batch_idx+1) * BATCH_SIZE
-
         for i in range(file_size):
             
             rs_current_data=np.reshape(current_data[i],(1,2048,3))
             rs_pottery=np.reshape(pottery[current_label[i]],(1,2048,3))
-            rs_seg = np.eye(2)[current_seg[i]] # rs_seg.shape=(4,2)
+            # rs_seg = np.eye(2)[current_seg[i]] # rs_seg.shape=(4,2)
+            rs_seg0 = current_seg[i][0]*8+current_seg[i][1]*4+current_seg[i][2]*2+current_seg[i][3]
+            rs_seg = np.eye(16)[rs_seg0]
 
             train_data=np.concatenate((rs_current_data, rs_pottery),axis=0)
 
@@ -295,14 +281,15 @@ def train_one_epoch(sess, ops, train_writer):
 
             train_writer.add_summary(summary, step)
             
-            print('pred, label, loss:', np.argmax(pred_val, axis=1), current_seg[i], loss_val)
-            correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
+            # print('pred, label, loss:', np.argmax(pred_val, axis=1), current_seg[i], loss_val)
+            # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
+            correct = np.sum(np.argmax(pred_val, axis=1) == rs_seg0) 
             total_correct += correct
-            total_seen += num_batches * 4
+            total_seen += num_batches
             loss_sum += loss_val
 
             if fn % 100 == 100 - 1:
-                # COMBINE FEATURES
+                # COMBINE FEATURES*
                 log_string('mean loss: %f' % (loss_sum / float(total_seen)))
                 log_string('accuracy: %f' % (total_correct / float(total_seen)))
             
@@ -335,7 +322,10 @@ def eval_one_epoch(sess, ops, test_writer):
         for i in range(file_size):
             rs_current_data=np.reshape(current_data[i],(1,2048,3))
             rs_pottery=np.reshape(pottery[current_label[i]],(1,2048,3))
-            rs_seg = np.eye(2)[current_seg[i]] # rs_seg.shape=(4,2)
+            # rs_seg = np.eye(2)[current_seg[i]] # rs_seg.shape=(4,2)
+            rs_seg0 = current_seg[i][0]*8+current_seg[i][1]*4+current_seg[i][2]*2+current_seg[i][3]
+            rs_seg = np.eye(16)[rs_seg0] # rs_seg.shape=(4,2)
+            test_data=np.concatenate((rs_current_data, rs_pottery),axis=0)
 
             rotated_data = provider.rotate_point_cloud(test_data)
             jittered_data = provider.jitter_point_cloud(rotated_data)
@@ -349,15 +339,17 @@ def eval_one_epoch(sess, ops, test_writer):
                         }
             summary, step, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
                 ops['loss'], ops['pred']], feed_dict=feed_dict)
-            pred_val = np.argmax(pred_val, 0)
+            #pred_val = np.argmax(pred_val, 0)
 
-            correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
+            # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
+            correct = np.sum(np.argmax(pred_val, axis=1) == rs_seg0)
             print('pred, label, loss:', np.argmax(pred_val, axis=1), current_seg[i], loss_val)
 
             total_correct += correct
             total_seen += num_batches
-    #            loss_sum += (loss_val*BATCH_SIZE)
             loss_sum += loss_val
+
+            
 
         
     log_string('eval mean loss: %f' % (loss_sum / float(total_seen)))

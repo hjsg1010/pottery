@@ -13,7 +13,8 @@ import tf_util
 
 def placeholder_inputs(batch_size, num_point):
     pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 3))
-    labels_pl = tf.placeholder(tf.float32, shape=(4, 2)) 
+    # labels_pl = tf.placeholder(tf.float32, shape=(4, 2)) 
+    labels_pl = tf.placeholder(tf.float32, shape=(16))
     return pointclouds_pl, labels_pl
 
 
@@ -99,12 +100,14 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
     net = skip_dense(net, 2048, 10, 0.1, is_training)
     print("skip_dense: ", net.shape)
 
-    net = tf.contrib.layers.fully_connected(net, 8, activation_fn = None, scope='fc3')
-    # net = tf.contrib.layers.fully_connected(net, 4, activation_fn=tf.nn.sigmoid, scope='fc3')  # change activation function to sigmoid
-    net = tf.reshape(net, [4, -1])
+    # net = tf.contrib.layers.fully_connected(net, 5, activation_fn=None, scope='fc3')  # for classification
+
+    # net = tf.contrib.layers.fully_connected(net, 8, activation_fn = None, scope='fc3')
+    # net = tf.reshape(net, [4, -1])      #for (4,2) segmentation
+
+    net = tf.contrib.layers.fully_connected(net, 16, activation_fn = None, scope='fc3')
     print("final net: ", net.shape)
-    # sys.exit()
-    #  print(net.shape)
+
 
     return net, end_points
 
@@ -127,6 +130,7 @@ def get_loss(pred, label, end_points):
 
 def get_seg_loss(seg_pred, seg_label, end_points):
     part_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=seg_label, logits=seg_pred))
+    # part_loss = tf.reduce_prod(tf.nn.softmax_cross_entropy_with_logits(labels=seg_label, logits=seg_pred))
     reg_loss = tf.reduce_mean(tf.get_collection(
         tf.GraphKeys.REGULARIZATION_LOSSES))
     loss = part_loss + reg_loss
