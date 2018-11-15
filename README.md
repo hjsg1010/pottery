@@ -8,7 +8,7 @@
 
 ## Classficiation Model
 
-![classification model](./images/classification_model.png)
+![classification model](./images/classification_model_new.png)
 
   
 train: ./train_pottery_2.py  
@@ -17,7 +17,7 @@ model: ./models/dgcnn+skipdense.py
 
 ## Segmentation Model
 
-![segmentation model](./images/segmentation_model.png)
+![segmentation model](./images/segmentation_model_new.png)
 
 
 train: ./train_pottery_seg.py  
