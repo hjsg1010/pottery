@@ -14,7 +14,7 @@ import tf_util
 def placeholder_inputs(batch_size, num_point):
     pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 3))
     # labels_pl = tf.placeholder(tf.float32, shape=(4, 2)) 
-    labels_pl = tf.placeholder(tf.float32, shape=(8))
+    labels_pl = tf.placeholder(tf.float32, shape=(batch_size, 8))
     return pointclouds_pl, labels_pl
 
 
@@ -94,21 +94,38 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
     net = tf.reduce_max(net, axis=1, keep_dims=True)
 
     # MLP on global point cloud vector
-    net = tf.reshape(net, [1, -1])
+    net = tf.reshape(net, [batch_size, -1])
     print("reshape: ", net.shape)
 
-    net = skip_dense(net, 2048, 10, 0.1, is_training)
-    print("skip_dense: ", net.shape)
+    net = tf.multiply(net, filters)
+    print("filtered_net: ", net.shape)
 
-    # net = tf.contrib.layers.fully_connected(net, 5, activation_fn=None, scope='fc3')  # for classification
+    merged_net = tf.reduce_sum(net, 0, keep_dims=True) 
 
-    # net = tf.contrib.layers.fully_connected(net, 8, activation_fn = None, scope='fc3')
-    # net = tf.reshape(net, [4, -1])      #for (4,2) segmentation
+    # net = tf.multiply(net,merged_net)
+    # print("multiplied net: ", net.shape)
+    afnet=np.zeros((batch_size,8),dtype=object)
+    
+    for i in range(batch_size):
+        ttnet = []
+        ttnet=[net[i]]
+        ttnet=tf.convert_to_tensor(ttnet,np.float32) # 1,1024
+        tempnet = tf.concat([ttnet,merged_net],0)
+        tempnet = skip_dense(tempnet, 1024, 10, 0.1, is_training)
+        tempnet=tf.reshape(tempnet,[1,-1])
+        tempnet = tf.contrib.layers.fully_connected(tempnet, 8, activation_fn = None, scope='fc3') # 1,8
+        afnet[i]=tempnet
+    tfafnet = tf.convert_to_tensor(afnet, np.float32)
+    print("asdfasdf: ", tfafnet.shape)
+    sys.exit()
+    
+    # net = skip_dense(net, 1024, 10, 0.1, is_training)
+    # print("skip_dense: ", net.shape)
 
-    net = tf.contrib.layers.fully_connected(net, 8, activation_fn = None, scope='fc3')
+
+    # net = tf.contrib.layers.fully_connected(net, 16, activation_fn = None, scope='fc3')
     print("final net: ", net.shape)
-
-
+    
     return net, end_points
 
 
