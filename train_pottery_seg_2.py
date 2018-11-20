@@ -24,7 +24,7 @@ parser.add_argument('--num_point', type=int, default=2048,
                     help='Point Number [256/512/1024/2048] [default: 2048]')
 parser.add_argument('--max_epoch', type=int, default=100,
                     help='Epoch to run [default: 200]')
-parser.add_argument('--batch_size', type=int, default=20, #default=20,
+parser.add_argument('--batch_size', type=int, default=2, #default=20,
                     help='Batch Size during training [default: 20]')
 parser.add_argument('--optimizer', default='adam',
                     help='adam or momentum [default: adam]')
@@ -136,7 +136,7 @@ def train():
             batch = tf.Variable(0)
             bn_decay = get_bn_decay(batch)
 
-            #filters for real shards and padding shards
+            # filters for real shards and padding shards
 			
             filters = tf.placeholder(dtype=tf.float32, shape=[BATCH_SIZE, 1024])
 
@@ -255,61 +255,43 @@ def train_one_epoch(sess, ops, train_writer):
         file_size = int(TRAIN_FILES[train_file_idxs[fn]].split('_')[1])
         num_batches = 1
 
-        # create filters
-        ones = np.ones([file_size, 1024], np.int32)
-        zeros = np.zeros([BATCH_SIZE-file_size, 1024], np.int32)
-        #print(ones.shape, zeros.shape)
-        if file_size == 20:
-          filters = ones
-        else:
-          filters = np.concatenate([ones, zeros], axis=0)
-        #print(filters.shape)
-		
-        # batch_idx => shard idx로 생각
-        #for batch_idx in range(num_batches):
-        batch_idx = 0
-        start_idx = batch_idx * BATCH_SIZE
-        end_idx = (batch_idx+1) * BATCH_SIZE
-
-        y_seg=np.zeros((BATCH_SIZE,8), dtype=int)
-        y_seg0=np.zeros((BATCH_SIZE,1), dtype=int)
         for i in range(file_size):
-            rs_seg0 = current_seg[i][0]*4+current_seg[i][1]*2+current_seg[i][2]
-            rs_seg = np.eye(8)[rs_seg0] 
-            y_seg[i]=rs_seg
-            y_seg0[0][i]=rs_seg0
+            
+            rs_current_data=np.reshape(current_data[i],(1,2048,3))
+            rs_pottery=np.reshape(pottery[current_label[i]],(1,2048,3))
+            train_data=np.concatenate((rs_current_data, rs_pottery),axis=0)
+            rs_seg=np.reshape(current_seg[i],(1,3))
 
-        # Augment batched point clouds by rotation and jittering
-        rotated_data = provider.rotate_point_cloud(current_data[start_idx:end_idx, :, :])
-        jittered_data = provider.jitter_point_cloud(rotated_data)
-        jittered_data = provider.random_scale_point_cloud(jittered_data)
-        jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
-        jittered_data = provider.shift_point_cloud(jittered_data)
+            # Augment batched point clouds by rotation and jittering
+            rotated_data = provider.rotate_point_cloud(train_data)
+            jittered_data = provider.jitter_point_cloud(rotated_data)
+            # jittered_data = provider.random_scale_point_cloud(jittered_data)
+            jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
+            jittered_data = provider.shift_point_cloud(jittered_data)
 
-        feed_dict = {ops['pointclouds_pl']: jittered_data,
-                    ops['labels_pl']: y_seg,
-                    ops['is_training_pl']: is_training,
-                    ops['filters']: filters,
-                    }
-        
-        summary, step, _, loss_val, pred_val = sess.run([ops['merged'], ops['step'], ops['train_op'], ops['loss'], ops['pred']], feed_dict=feed_dict)
+            feed_dict = {ops['pointclouds_pl']: jittered_data,
+                        ops['labels_pl']: rs_seg,
+                        ops['is_training_pl']: is_training
+                        }
+            
+            summary, step, _, loss_val, pred_val = sess.run([ops['merged'], ops['step'], ops['train_op'], ops['loss'], ops['pred']], feed_dict=feed_dict)
 
-        train_writer.add_summary(summary, step)
-        
-        print('pred, label, loss:', np.argmax(pred_val, axis=1), y_seg0, loss_val)
-        # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
-        correct = np.sum(np.argmax(pred_val, axis=1) == y_seg) 
-        total_correct += correct
-        total_seen += num_batches
-        loss_sum += loss_val
+            train_writer.add_summary(summary, step)
+            
+            print('pred, label, loss: \n', pred_val, rs_seg, loss_val)
+            # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
+            correct = np.sum(np.argmax(pred_val) == rs_seg) 
+            total_correct += correct
+            total_seen += num_batches
+            loss_sum += loss_val
 
-        if fn % 100 == 100 - 1:
-            # COMBINE FEATURES*
-            log_string('mean loss: %f' % (loss_sum / float(total_seen)))
-            log_string('accuracy: %f' % (total_correct / float(total_seen)))
-        
-            total_acc_summary.value[0].simple_value=(total_correct/float(total_seen))    
-            train_writer.add_summary(total_acc_summary,step)
+            if fn % 100 == 100 - 1:
+                # COMBINE FEATURES*
+                log_string('mean loss: %f' % (loss_sum / float(total_seen)))
+                log_string('accuracy: %f' % (total_correct / float(total_seen)))
+            
+                total_acc_summary.value[0].simple_value=(total_correct/float(total_seen))    
+                train_writer.add_summary(total_acc_summary,step)
 
 
 def eval_one_epoch(sess, ops, test_writer):
@@ -331,50 +313,37 @@ def eval_one_epoch(sess, ops, test_writer):
 
         
         file_size = int(TEST_FILES[fn].split('_')[1])
+
         num_batches = 1
 
-        # create filters
-        ones = np.ones([file_size, 1024], np.int32)
-        zeros = np.zeros([BATCH_SIZE-file_size, 1024], np.int32)
-        #print(ones.shape, zeros.shape)
-        if file_size == 20:
-          filters = ones
-        else:
-          filters = np.concatenate([ones, zeros], axis=0)
-        batch_idx = 0
-        start_idx = batch_idx * BATCH_SIZE
-        end_idx = (batch_idx+1) * BATCH_SIZE
-        y_seg=np.zeros((BATCH_SIZE,8), dtype=int)
-        y_seg0=np.zeros((BATCH_SIZE,1), dtype=int)
         for i in range(file_size):
-            rs_seg0 = current_seg[i][0]*4+current_seg[i][1]*2+current_seg[i][2]
-            rs_seg = np.eye(8)[rs_seg0] 
-            y_seg[i]=rs_seg
-            y_seg0[0][i]=rs_seg0
-     
+            rs_current_data=np.reshape(current_data[i],(1,2048,3))
+            rs_pottery=np.reshape(pottery[current_label[i]],(1,2048,3))
+            test_data=np.concatenate((rs_current_data, rs_pottery),axis=0)
 
-        rotated_data = provider.rotate_point_cloud(current_data[start_idx:end_idx, :, :])
-        jittered_data = provider.jitter_point_cloud(rotated_data)
-        jittered_data = provider.random_scale_point_cloud(jittered_data)
-        jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
-        jittered_data = provider.shift_point_cloud(jittered_data)
+            rs_seg=np.reshape(current_seg[i],(1,3))
 
-        feed_dict = {ops['pointclouds_pl']: jittered_data,
-                    ops['labels_pl']: y_seg,
-                    ops['is_training_pl']: is_training,
-                    ops['filters']: filters,
-                    }
-        summary, step, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
-            ops['loss'], ops['pred']], feed_dict=feed_dict)
-        #pred_val = np.argmax(pred_val, 0)
+            rotated_data = provider.rotate_point_cloud(test_data)
+            jittered_data = provider.jitter_point_cloud(rotated_data)
+            # jittered_data = provider.random_scale_point_cloud(jittered_data)
+            jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
+            jittered_data = provider.shift_point_cloud(jittered_data)
 
-        # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
-        correct = np.sum(np.argmax(pred_val, axis=1) == y_seg)
-        print('pred, label, loss:', np.argmax(pred_val, axis=1), y_seg0, loss_val)
+            feed_dict = {ops['pointclouds_pl']: jittered_data,
+                        ops['labels_pl']: rs_seg,
+                        ops['is_training_pl']: is_training
+                        }
+            summary, step, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
+                ops['loss'], ops['pred']], feed_dict=feed_dict)
+            #pred_val = np.argmax(pred_val, 0)
 
-        total_correct += correct
-        total_seen += num_batches
-        loss_sum += loss_val
+            # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
+            correct = np.sum(np.argmax(pred_val) == rs_seg)
+            print('pred, label, loss: \n', pred_val, rs_seg, loss_val)
+
+            total_correct += correct
+            total_seen += num_batches
+            loss_sum += loss_val
 
             
 

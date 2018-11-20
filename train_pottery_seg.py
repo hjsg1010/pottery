@@ -69,8 +69,11 @@ BN_DECAY_CLIP = 0.99
 HOSTNAME = socket.gethostname()
 
 
-TRAIN_FILES = provider.getDataFiles('./data/train_files.txt')
-TEST_FILES = provider.getDataFiles('./data/test_files.txt')
+# TRAIN_FILES = provider.getDataFiles('./data/train_files.txt')
+# TEST_FILES = provider.getDataFiles('./data/test_files.txt')
+
+TRAIN_FILES = provider.getDataFiles('./data/train_files_1.txt')
+TEST_FILES = provider.getDataFiles('./data/test_files_1.txt')
 
 val_acc = None
 val_acc_summary = tf.Summary()
@@ -153,8 +156,10 @@ def train():
             # loss = MODEL.get_seg_loss(pred, label, end_points)
             tf.summary.scalar('loss', loss)
 
-            print("pred.shape: ", tf.argmax(pred,0).shape, "label.shape: ", tf.to_int64(labels_pl).shape)
+            # print("pred.shape: ", tf.argmax(pred,0).shape, "label.shape: ", tf.to_int64(labels_pl).shape)
             # correct = tf.equal(tf.argmax(pred, 0), tf.to_int64(labels_pl))
+            print("pred: ", pred.shape, "labels_pl: ", labels_pl.shape)
+            # sys.exit()
             correct = tf.equal(tf.to_int64(pred),tf.to_int64(labels_pl))
             print("correct: ", correct)
 
@@ -261,8 +266,30 @@ def train_one_epoch(sess, ops, train_writer):
             rs_pottery=np.reshape(pottery[current_label[i]],(1,2048,3))
             # rs_seg = np.eye(2)[current_seg[i]] # rs_seg.shape=(4,2)
             # rs_seg0 = current_seg[i][0]*8+current_seg[i][1]*4+current_seg[i][2]*2+current_seg[i][3]
-            rs_seg0 = current_seg[i][0]*4+current_seg[i][1]*2+current_seg[i][2]
-            rs_seg = np.eye(8)[rs_seg0]
+            # rs_seg0 = current_seg[i][0]*4+current_seg[i][1]*2+current_seg[i][2]
+            # rs_seg = np.eye(8)[rs_seg0]
+            rs_seg1=np.reshape(current_seg[i],(1,3))
+            bins=np.linspace(0,1,11)
+            digit_label=[0,0,0]
+            for j in range(len(rs_seg1[0])):
+                if rs_seg1[0][j]<0:
+                    n=rs_seg1[0][j]+0.1
+                else:
+                    n=rs_seg1[0][j]
+                m=np.digitize(n,bins)
+                # print("m: ", m)
+                if m < 0:
+                    digit_label[j]=m+1
+                elif m==0:
+                    digit_label[j]=m
+                elif m > 10:
+                    digit_label[j]=m-2
+                else:
+                    digit_label[j]=m-1
+                
+            # print("rs_seg1: ", rs_seg1,'\n', "digit_label: ", digit_label)
+            rs_seg=np.eye(10)[digit_label]
+
 
             train_data=np.concatenate((rs_current_data, rs_pottery),axis=0)
 
@@ -282,9 +309,10 @@ def train_one_epoch(sess, ops, train_writer):
 
             train_writer.add_summary(summary, step)
             
-            # print('pred, label, loss:', np.argmax(pred_val, axis=1), current_seg[i], loss_val)
+            print('pred, label, loss:', np.argmax(pred_val, axis=1), np.argmax(rs_seg, axis=1), loss_val)  #for np.eye settings
+            # print('pred, label, loss:', pred_val, rs_seg, loss_val)
             # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
-            correct = np.sum(np.argmax(pred_val) == rs_seg0) 
+            correct = np.sum(np.argmax(pred_val) == rs_seg) 
             total_correct += correct
             total_seen += num_batches
             loss_sum += loss_val
@@ -325,9 +353,33 @@ def eval_one_epoch(sess, ops, test_writer):
             rs_pottery=np.reshape(pottery[current_label[i]],(1,2048,3))
             # rs_seg = np.eye(2)[current_seg[i]] # rs_seg.shape=(4,2)
             # rs_seg0 = current_seg[i][0]*8+current_seg[i][1]*4+current_seg[i][2]*2+current_seg[i][3]
-            rs_seg0 = current_seg[i][0]*4+current_seg[i][1]*2+current_seg[i][2]
-            rs_seg = np.eye(8)[rs_seg0] 
+            # rs_seg0 = current_seg[i][0]*4+current_seg[i][1]*2+current_seg[i][2]
+            # rs_seg = np.eye(8)[rs_seg0] 
             test_data=np.concatenate((rs_current_data, rs_pottery),axis=0)
+
+            rs_seg1=np.reshape(current_seg[i],(1,3))
+            bins=np.linspace(0,1,11)
+            digit_label=[0,0,0]
+            for j in range(len(rs_seg1[0])):
+                if rs_seg1[0][j]<0:
+                    n=rs_seg1[0][j]+0.1
+                else:
+                    n=rs_seg1[0][j]
+                m=np.digitize(n,bins)
+                # print("m: ", m)
+                if m < 0:
+                    digit_label[j]=m+1
+                elif m==0:
+                    digit_label[j]=m
+                elif m > 10:
+                    digit_label[j]=m-2
+                else:
+                    digit_label[j]=m-1
+                
+            # print("rs_seg1: ", rs_seg1,'\n', "digit_label: ", digit_label)
+            rs_seg=np.eye(10)[digit_label]
+            # rs_seg0 = digit_label[0]*100+digit_label[1]*10+digit_label[2]
+            # rs_seg = np.eye(8)[rs_seg0]
 
             rotated_data = provider.rotate_point_cloud(test_data)
             jittered_data = provider.jitter_point_cloud(rotated_data)
@@ -344,9 +396,9 @@ def eval_one_epoch(sess, ops, test_writer):
             #pred_val = np.argmax(pred_val, 0)
 
             # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
-            correct = np.sum(np.argmax(pred_val) == rs_seg0)
-            print('pred, label, loss:', np.argmax(pred_val, axis=1), current_seg[i], loss_val)
-
+            print('pred, label, loss:', np.argmax(pred_val, axis=1), np.argmax(rs_seg, axis=1), loss_val)
+            correct = np.sum(np.argmax(pred_val) == rs_seg)
+        
             total_correct += correct
             total_seen += num_batches
             loss_sum += loss_val
