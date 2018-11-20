@@ -17,14 +17,14 @@ import tf_util
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', type=int, default=0,
                     help='GPU to use [default: GPU 0]')
-parser.add_argument('--model', default='dgcnn_pottery_seg',
+parser.add_argument('--model', default='dgcnn_pottery_seg_3',
                     help='Model name: dgcnn_pottery, dgcnn+skipdense, dgcnn_pottery_seg')
 parser.add_argument('--log_dir', default='logseg', help='Log dir [default: log]')
 parser.add_argument('--num_point', type=int, default=2048,
                     help='Point Number [256/512/1024/2048] [default: 2048]')
 parser.add_argument('--max_epoch', type=int, default=100,
                     help='Epoch to run [default: 200]')
-parser.add_argument('--batch_size', type=int, default=2, #default=20,
+parser.add_argument('--batch_size', type=int, default=20, #default=20,
                     help='Batch Size during training [default: 20]')
 parser.add_argument('--optimizer', default='adam',
                     help='adam or momentum [default: adam]')
@@ -71,9 +71,6 @@ HOSTNAME = socket.gethostname()
 
 TRAIN_FILES = provider.getDataFiles('./data/train_files.txt')
 TEST_FILES = provider.getDataFiles('./data/test_files.txt')
-
-# TRAIN_FILES = provider.getDataFiles('./data/train_files_5.txt')
-# TEST_FILES = provider.getDataFiles('./data/test_files_5.txt')
 
 val_acc = None
 val_acc_summary = tf.Summary()
@@ -156,10 +153,8 @@ def train():
             # loss = MODEL.get_seg_loss(pred, label, end_points)
             tf.summary.scalar('loss', loss)
 
-            # print("pred.shape: ", tf.argmax(pred,0).shape, "label.shape: ", tf.to_int64(labels_pl).shape)
+            print("pred.shape: ", tf.argmax(pred,0).shape, "label.shape: ", tf.to_int64(labels_pl).shape)
             # correct = tf.equal(tf.argmax(pred, 0), tf.to_int64(labels_pl))
-            print("pred: ", pred.shape, "labels_pl: ", labels_pl.shape)
-            # sys.exit()
             correct = tf.equal(tf.to_int64(pred),tf.to_int64(labels_pl))
             print("correct: ", correct)
 
@@ -180,7 +175,7 @@ def train():
                 # optimizer = tf.train.AdamOptimizer(learning_rate)
                 optimizer = tf.train.AdamOptimizer()
 
-            optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, clip_norm=3.0)
+            optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, clip_norm=5.0)
             train_op = optimizer.minimize(loss, global_step=batch)
 
 #            with tf.variable_scope('agg', reuse=True) as scope_conv:
@@ -253,88 +248,49 @@ def train_one_epoch(sess, ops, train_writer):
         # log_string('----' + str(fn) + '-----')
         current_data, current_label, current_seg = provider.loadsegDataFile(TRAIN_FILES[train_file_idxs[fn]])
         current_data = current_data[:, 0:NUM_POINT, :]
-        # current_data, current_label, current_seg_ = provider.shuffle_data(current_data, np.squeeze(current_label))
         current_label = np.squeeze(current_label)
         current_seg = np.squeeze(current_seg)
+        # print("current_seg.shape; ", current_seg.shape)
 
-        file_size = int(TRAIN_FILES[train_file_idxs[fn]].split('_')[1])
+        # file_size = int(TRAIN_FILES[train_file_idxs[fn]].split('_')[1])
         num_batches = 1
 
-        for i in range(file_size):
-            
-            rs_current_data=np.reshape(current_data[i],(1,2048,3))
-            rs_pottery=np.reshape(pottery[current_label[i]],(1,2048,3))
-            # rs_seg = np.eye(2)[current_seg[i]] # rs_seg.shape=(4,2)
-            # rs_seg0 = current_seg[i][0]*8+current_seg[i][1]*4+current_seg[i][2]*2+current_seg[i][3]
-            # rs_seg0 = current_seg[i][0]*4+current_seg[i][1]*2+current_seg[i][2]
-            # rs_seg = np.eye(8)[rs_seg0]
-            rs_seg1=np.reshape(current_seg[i],(1,3))
-            # bins=np.linspace(0,1,11)
-            # digit_label=[0,0,0]
-            # for j in range(len(rs_seg1[0])):
-            #     if rs_seg1[0][j]<0:
-            #         n=rs_seg1[0][j]+0.1
-            #     else:
-            #         n=rs_seg1[0][j]
-            #     m=np.digitize(n,bins)
-            #     # print("m: ", m)
-            #     if m < 0:
-            #         digit_label[j]=m+1
-            #     elif m==0:
-            #         digit_label[j]=m
-            #     elif m > 10:
-            #         digit_label[j]=m-2
-            #     else:
-            #         digit_label[j]=m-1
-            # rs_seg=np.eye(10)[digit_label]
+        batch_idx = 0
+        start_idx = batch_idx * BATCH_SIZE
+        end_idx = (batch_idx+1) * BATCH_SIZE
 
-            digit_label=[0,0,0]
-            for j in range(len(digit_label)):
-                if rs_seg1[0][0]>0.9:
-                    digit_label[0]=1
-                if rs_seg1[0][2]<0.1:
-                    digit_label[2]=1
-                if rs_seg1[0][1]<0.9 and rs_seg1[0][2]>0.1:
-                    digit_label[1]=1
-            
-            # rs_seg=digit_label[0]*4+digit_label[1]*2+digit_label[2]*1
-            rs_seg=digit_label
-            # print("rs_seg: ", rs_seg)
-            # sys.exit()
+        # Augment batched point clouds by rotation and jittering
+        rotated_data = provider.rotate_point_cloud(current_data[start_idx:end_idx, :, :])
+        jittered_data = provider.jitter_point_cloud(rotated_data)
+        # jittered_data = provider.random_scale_point_cloud(jittered_data)
+        jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
+        jittered_data = provider.shift_point_cloud(jittered_data)
 
-            train_data=np.concatenate((rs_current_data, rs_pottery),axis=0)
+        feed_dict = {ops['pointclouds_pl']: jittered_data,
+                    ops['labels_pl']: current_seg,
+                    ops['is_training_pl']: is_training
+                    }
+        
+        summary, step, _, loss_val, pred_val = sess.run([ops['merged'], ops['step'], ops['train_op'], ops['loss'], ops['pred']], feed_dict=feed_dict)
 
-            # Augment batched point clouds by rotation and jittering
-            rotated_data = provider.rotate_point_cloud(train_data)
-            jittered_data = provider.jitter_point_cloud(rotated_data)
-            # jittered_data = provider.random_scale_point_cloud(jittered_data)
-            jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
-            jittered_data = provider.shift_point_cloud(jittered_data)
+        train_writer.add_summary(summary, step)
+        
+        # print('pred, label, loss: \n', pred_val,'\n', current_seg,'\n', loss_val)
+        diff=pred_val-current_seg
+        print('difference: \n', diff)
+        # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
+        correct = np.sum(np.argmax(pred_val) == current_seg) 
+        total_correct += correct
+        total_seen += num_batches
+        loss_sum += loss_val
 
-            feed_dict = {ops['pointclouds_pl']: jittered_data,
-                        ops['labels_pl']: [rs_seg],
-                        ops['is_training_pl']: is_training
-                        }
-            
-            summary, step, _, loss_val, pred_val = sess.run([ops['merged'], ops['step'], ops['train_op'], ops['loss'], ops['pred']], feed_dict=feed_dict)
-
-            train_writer.add_summary(summary, step)
-            
-            # print('pred, label, loss:', np.argmax(pred_val, axis=1), np.argmax(rs_seg, axis=1), loss_val)  #for np.eye settings
-            print('pred, label, loss:', pred_val, rs_seg, loss_val)
-            # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
-            correct = np.sum(np.argmax(pred_val) == rs_seg) 
-            total_correct += correct
-            total_seen += num_batches
-            loss_sum += loss_val
-
-            if fn % 100 == 100 - 1:
-                # COMBINE FEATURES*
-                log_string('mean loss: %f' % (loss_sum / float(total_seen)))
-                log_string('accuracy: %f' % (total_correct / float(total_seen)))
-            
-                total_acc_summary.value[0].simple_value=(total_correct/float(total_seen))    
-                train_writer.add_summary(total_acc_summary,step)
+        if fn % 100 == 100 - 1:
+            # COMBINE FEATURES*
+            log_string('mean loss: %f' % (loss_sum / float(total_seen)))
+            log_string('accuracy: %f' % (total_correct / float(total_seen)))
+        
+            total_acc_summary.value[0].simple_value=(total_correct/float(total_seen))    
+            train_writer.add_summary(total_acc_summary,step)
 
 
 def eval_one_epoch(sess, ops, test_writer):
@@ -359,60 +315,27 @@ def eval_one_epoch(sess, ops, test_writer):
 
         num_batches = 1
 
-        for i in range(file_size):
-            rs_current_data=np.reshape(current_data[i],(1,2048,3))
-            rs_pottery=np.reshape(pottery[current_label[i]],(1,2048,3))
-            # rs_seg = np.eye(2)[current_seg[i]] # rs_seg.shape=(4,2)
-            # rs_seg0 = current_seg[i][0]*8+current_seg[i][1]*4+current_seg[i][2]*2+current_seg[i][3]
-            # rs_seg0 = current_seg[i][0]*4+current_seg[i][1]*2+current_seg[i][2]
-            # rs_seg = np.eye(8)[rs_seg0] 
-            test_data=np.concatenate((rs_current_data, rs_pottery),axis=0)
+        rotated_data = provider.rotate_point_cloud(test_data)
+        jittered_data = provider.jitter_point_cloud(rotated_data)
+        # jittered_data = provider.random_scale_point_cloud(jittered_data)
+        jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
+        jittered_data = provider.shift_point_cloud(jittered_data)
 
-            rs_seg1=np.reshape(current_seg[i],(1,3))
-            bins=np.linspace(0,1,11)
-            digit_label=[0,0,0]
-            for j in range(len(rs_seg1[0])):
-                if rs_seg1[0][j]<0:
-                    n=rs_seg1[0][j]+0.1
-                else:
-                    n=rs_seg1[0][j]
-                m=np.digitize(n,bins)
-                # print("m: ", m)
-                if m < 0:
-                    digit_label[j]=m+1
-                elif m==0:
-                    digit_label[j]=m
-                elif m > 10:
-                    digit_label[j]=m-2
-                else:
-                    digit_label[j]=m-1
-                
-            # print("rs_seg1: ", rs_seg1,'\n', "digit_label: ", digit_label)
-            rs_seg=np.eye(10)[digit_label]
-            # rs_seg0 = digit_label[0]*100+digit_label[1]*10+digit_label[2]
-            # rs_seg = np.eye(8)[rs_seg0]
+        feed_dict = {ops['pointclouds_pl']: jittered_data,
+                    ops['labels_pl']: rs_seg,
+                    ops['is_training_pl']: is_training
+                    }
+        summary, step, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
+            ops['loss'], ops['pred']], feed_dict=feed_dict)
+        #pred_val = np.argmax(pred_val, 0)
 
-            rotated_data = provider.rotate_point_cloud(test_data)
-            jittered_data = provider.jitter_point_cloud(rotated_data)
-            # jittered_data = provider.random_scale_point_cloud(jittered_data)
-            jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
-            jittered_data = provider.shift_point_cloud(jittered_data)
+        # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
+        correct = np.sum(np.argmax(pred_val) == rs_seg)
+        print('pred, label, loss: \n', pred_val, rs_seg, loss_val)
 
-            feed_dict = {ops['pointclouds_pl']: jittered_data,
-                        ops['labels_pl']: rs_seg,
-                        ops['is_training_pl']: is_training
-                        }
-            summary, step, loss_val, pred_val = sess.run([ops['merged'], ops['step'],
-                ops['loss'], ops['pred']], feed_dict=feed_dict)
-            #pred_val = np.argmax(pred_val, 0)
-
-            # correct = np.sum(np.argmax(pred_val, axis=1) == current_seg[i])
-            print('pred, label, loss:', np.argmax(pred_val, axis=1), np.argmax(rs_seg, axis=1), loss_val)
-            correct = np.sum(np.argmax(pred_val) == rs_seg)
-        
-            total_correct += correct
-            total_seen += num_batches
-            loss_sum += loss_val
+        total_correct += correct
+        total_seen += num_batches
+        loss_sum += loss_val
 
             
 

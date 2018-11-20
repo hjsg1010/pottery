@@ -13,8 +13,8 @@ import tf_util
 
 def placeholder_inputs(batch_size, num_point):
     pointclouds_pl = tf.placeholder(tf.float32, shape=(batch_size, num_point, 3))
-    # labels_pl = tf.placeholder(tf.float32, shape=(4, 2)) 
-    labels_pl = tf.placeholder(tf.float32, shape=(1,3))
+    labels_pl = tf.placeholder(tf.float32, shape=(batch_size,3)) 
+    # labels_pl = tf.placeholder(tf.float32, shape=(8))
     return pointclouds_pl, labels_pl
 
 
@@ -49,6 +49,7 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
                          scope='dgcnn1', bn_decay=bn_decay)
     net = tf.reduce_max(net, axis=-2, keep_dims=True)
     net1 = net
+    print("net1: ", net1.shape)
 
     adj_matrix = tf_util.pairwise_distance(net)
     nn_idx = tf_util.knn(adj_matrix, k=k)
@@ -61,6 +62,7 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
                          scope='dgcnn2', bn_decay=bn_decay)
     net = tf.reduce_max(net, axis=-2, keep_dims=True)
     net2 = net
+    print("net2: ", net2.shape)
 
     adj_matrix = tf_util.pairwise_distance(net)
     nn_idx = tf_util.knn(adj_matrix, k=k)
@@ -73,6 +75,7 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
                          scope='dgcnn3', bn_decay=bn_decay)
     net = tf.reduce_max(net, axis=-2, keep_dims=True)
     net3 = net
+    print("net3: ", net3.shape)
 
     adj_matrix = tf_util.pairwise_distance(net)
     nn_idx = tf_util.knn(adj_matrix, k=k)
@@ -85,6 +88,7 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
                          scope='dgcnn4', bn_decay=bn_decay)
     net = tf.reduce_max(net, axis=-2, keep_dims=True)
     net4 = net
+    print("net4: ", net4.shape)
 
     net = tf_util.conv2d(tf.concat([net1, net2, net3, net4], axis=-1), 1024, [1, 1],
                          padding='VALID', stride=[1, 1],
@@ -92,25 +96,31 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
                          bn=False,
                          scope='agg', bn_decay=bn_decay)
     net = tf.reduce_max(net, axis=1, keep_dims=True)
+    print("net5: ", net.shape)
 
     # MLP on global point cloud vector
-    net = tf.reshape(net, [1, -1])
+    net = tf.reshape(net, [batch_size, -1])
     print("reshape: ", net.shape)
 
-    net = skip_dense(net, 2048, 10, 0.1, is_training)
+    # net = tf.multiply(net, filters)   # remove additional padding shards
+    r_net = tf.reduce_sum(net, 0, keep_dims=True) # pottery part : 1*1024
+    print("reduce_sum: ", net.shape)
+
+    net = tf.concat([r_net]*20, axis=0)
+    print("concat_net: ", net.shape)
+
+
+    net = skip_dense(net, 1024 , 10, 0.1, is_training)
     print("skip_dense: ", net.shape)
 
-    # net = tf.contrib.layers.fully_connected(net, 5, activation_fn=None, scope='fc3')  # for classification
-
-    # net = tf.contrib.layers.fully_connected(net, 8, activation_fn = None, scope='fc3')
-    # net = tf.reshape(net, [4, -1])      #for (4,2) segmentation
-
-    net = tf.contrib.layers.fully_connected(net, 3, activation_fn = None, scope='fc3')
-    # net = tf.reshape(net, [3,-1])
-    print("final net: ", net.shape)
-
-
-    return net, end_points
+    net_d = tf.contrib.layers.fully_connected(net, 3, activation_fn = None , scope='fc_d')
+    net = tf.contrib.layers.fully_connected(net, 3, activation_fn = None , scope='fc3')
+    
+    
+    pred=tf.div(net, tf.add(net,net_d))
+    print("final net: ", pred.shape)
+    
+    return pred, end_points
 
 
 def get_loss(pred, label, end_points):
@@ -130,9 +140,7 @@ def get_loss(pred, label, end_points):
 
 
 def get_seg_loss(seg_pred, seg_label, end_points):
-    # labels = tf.one_hot(indices=tf.to_int64(seg_label), depth=10)
     part_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=seg_label, logits=seg_pred))
-    # part_loss = tf.reduce_prod(tf.nn.softmax_cross_entropy_with_logits(labels=seg_label, logits=seg_pred))
     reg_loss = tf.reduce_mean(tf.get_collection(
         tf.GraphKeys.REGULARIZATION_LOSSES))
     loss = part_loss + reg_loss
@@ -157,7 +165,6 @@ def skip_dense(x, size, repeat, scale, training):
         x += act1 * scale
         print("skip_dense"+str(i)+": ", x)
     return x
-
 
 if __name__ == '__main__':
     batch_size = 2
