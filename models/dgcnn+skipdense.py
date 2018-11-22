@@ -99,20 +99,10 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
     # print(filters)
     net = tf.multiply(net, filters)   # remove additional padding shards
     net = tf.reduce_sum(net, 0, keep_dims=True)
-    # net = tf.reduce_mean(net, 0, keep_dims=True)
-    print(net)
+s    print(net)
 
     net = skip_dense(net, 1024, 10, 0.1, is_training)
-    #net = tf.layers.batch_normalization(net, training=is_training)
-    #net = tf.nn.relu(net)
-    # net = tf.contrib.layers.fully_connected(
-    #     net, 512, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc1')
-    # net = tf.contrib.layers.dropout(
-    #     net, keep_prob=0.5, is_training=is_training, scope='dp1')
-    # net = tf.contrib.layers.fully_connected(
-    #     net, 256, activation_fn=tf.nn.relu, reuse=tf.AUTO_REUSE, scope='fc2')
-    # net = tf.contrib.layers.dropout(
-    #     net, keep_prob=0.5, is_training=is_training, scope='dp2')
+
     net = tf.contrib.layers.fully_connected(
         net, 5, activation_fn=None, scope='fc3')
     print("final net: ", net.shape)
@@ -129,8 +119,7 @@ def get_loss(pred, label, end_points):
     #print(labels.get_shape(), pred.get_shape())
 
     #loss = tf.losses.softmax_cross_entropy(onehot_labels=labels, logits=pred, label_smoothing=0.2)
-    classify_loss = tf.reduce_mean(
-        tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=pred))
+    classify_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels, logits=pred))
     reg_loss = tf.reduce_mean(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES))
     loss = classify_loss + reg_loss
     return loss

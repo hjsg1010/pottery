@@ -171,3 +171,76 @@ def load_h5_data_label_seg(h5_filename):
 def loadsegDataFile(filename):
     # print(filename)
     return load_h5_data_label_seg(filename)
+
+def data_generator(datafile_list, batchsize):
+    data_q = []
+    label_q = []
+    seg_q = []
+    _50p = 0
+
+    for fn in datafile_list:
+        #print(fn)
+        #if fn == "1_5_844579.h5":
+        #    continue
+        """
+        if len(top_q) > ENOUGH and len(mid_q) > ENOUGH and len(bot_q) > ENOUGH:
+            #print(len(top_q), len(mid_q), len(bot_q))
+            yield (top_q, mid_q, bot_q)
+        """
+        #"""
+        if len(data_q) > batchsize:
+            #random.shuffle(data_q)
+            yield data_q[0:batchsize], label_q[0:batchsize], seg_q[0:batchsize]
+            del data_q[0:batchsize]
+            del label_q[0:batchsize]
+            del seg_q[0:batchsize]
+        #"""
+        # if len(data_q) > batchsize:
+        #     #random.shuffle(data_q)
+        #     data_batch = rotate_point_cloud_with_45s(data_q[0])
+        #     print
+        #     yield data_batch, label_q[0:1], seg_q[0:1]
+        #     del data_q[0]
+        #     del label_q[0]
+        #     del seg_q[0]
+        else:
+            data, label, seg = loadsegDataFile(fn)
+            # (20, 2048, 3), (20,), (20, 4)
+            seg[seg<=0] = 0.0000001
+            #print(data.shape, label.shape, seg.shape)
+            """
+            for si in range(label.shape[0]):
+                if label[si] == 0 or label[si] == 4:  # pot #1 or #5
+                    if seg[si][0] == 1 and len(bot_q) < MAX:  # bottom
+                        bot_q.append([data[si], label[si], seg[si]])
+                    elif seg[si][3] == 1 and len(top_q) < MAX:  # top
+                        top_q.append([data[si], label[si], seg[si]])
+                    elif seg[si][0] == 0 and seg[si][3] ==0 and len(mid_q) < MAX:  # mid
+                        mid_q.append([data[si], label[si], seg[si]])
+                else:  # pot #2, #3, #4
+                    if seg[si][0] == 1 and len(bot_q) < MAX:  # bottom
+                        bot_q.append([data[si], label[si], seg[si]])
+                    elif seg[si][2] == 1 and len(top_q) < MAX:  # top
+                        top_q.append([data[si], label[si], seg[si]])
+                    elif seg[si][0] == 0 and seg[si][2] ==0 and len(mid_q) < MAX:  # mid
+                        mid_q.append([data[si], label[si], seg[si]])
+            """
+            file_size = int(fn.split('_')[1])
+            #print(fn, file_size)
+            for i in range(file_size):
+                #if label[i] == 0:
+                #print(seg[i])
+                #sys.exit()
+                if _50p < 2:
+                    if seg[i][0] < 0.6 or seg[i][2] > 0.4:
+                        data_q.append(data[i])
+                        label_q.append(label[i])
+                        seg_q.append(seg[i])
+                        _50p += 1
+                else:
+                    data_q.append(data[i])
+                    label_q.append(label[i])
+                    seg_q.append(seg[i])
+                    _50p = 0
+
+    yield None, None, None
