@@ -6,29 +6,36 @@
 * Each Shards has various size of points.  
 
 
-## Classficiation Model
-
-![classification model](./images/classification_model_new.png)
-
-  
-train: ./train_pottery_2.py  
-model: ./models/dgcnn+skipdense.py   
-
-
-## Segmentation Model
-
-![segmentation model](./images/segmentation_model_new.png)
-
-
-train: ./train_pottery_seg.py  
-model: ./models/dgcnn_pottery_seg.py  
-
 ## DATA PREPARING
 run make_filelist.ipynb ### 도자기 별 shards list  
 ~~run npytoh5.ipynb ### 도자기 별 shards' points data 생성 및 train/test files list 생성~~  
 run npytoh5_seglabel.ipynb ### 도자기 별 shards' *CENTRALIZED(italic)* point cloud data, lables, segmentation_label 생성  
-* max segmentation part = 4  
-    * segmentation 수가 모자를 경우, 남은 label = 0으로 dummy처리 ( ex> [0,1,1] -> [0,1,1,0] )
+* segmentation_label: 각 shard의 (y_max, y_mean, y_min) 을 label로 부여
+
+
+
+## Model
+
+![model](./images/model.png)
+
+  
+train: ./train_pottery_combined.py  
+model: ./models/dgcnn+skipdense.py   
+
+python train_pottery_combined.py
+
+
+## Result Figure (ex)
+1) classification  
+![classification](./images/classification.png)
+
+
+2) location prediction  
+![segmentation](./images/segmentation.png)
+
+## EXPERIMENT
+실험 환경: ubuntu 16.04, 64Gmemory, 16core, GPU Tesla V100-SXM2(16G) * 2 (used 1 GPU)  
+ 
 
 
 

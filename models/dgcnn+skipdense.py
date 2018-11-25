@@ -99,7 +99,7 @@ def get_model(point_cloud, filters, is_training, bn_decay=None):
     # print(filters)
     net = tf.multiply(net, filters)   # remove additional padding shards
     net = tf.reduce_sum(net, 0, keep_dims=True)
-s    print(net)
+    print(net)
 
     net = skip_dense(net, 1024, 10, 0.1, is_training)
 
