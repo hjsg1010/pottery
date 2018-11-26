@@ -1,3 +1,5 @@
+import tf_util
+import provider
 import argparse
 import math
 import h5py
@@ -12,16 +14,16 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, 'models'))
 sys.path.append(os.path.join(BASE_DIR, 'utils'))
-import provider
-import tf_util
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', type=int, default=0,
                     help='GPU to use [default: GPU 0]')
 parser.add_argument('--model', default='dgcnn_pottery_combined',
                     help='Model name: dgcnn_pottery, dgcnn+skipdense, dgcnn_pottery_seg')
-parser.add_argument('--weight', default='', help='saved model weight file name.')
-parser.add_argument('--log_dir', default='log_seg', help='Log dir [default: log]')
+parser.add_argument('--weight', default='',
+                    help='saved model weight file name.')
+parser.add_argument('--log_dir', default='log_seg',
+                    help='Log dir [default: log]')
 parser.add_argument('--num_point', type=int, default=2048,
                     help='Point Number [256/512/1024/2048] [default: 2048]')
 parser.add_argument('--max_epoch', type=int, default=100,
@@ -55,7 +57,8 @@ WEIGHT = FLAGS.weight
 MODEL = importlib.import_module(FLAGS.model)  # import network module
 MODEL_FILE = os.path.join(BASE_DIR, 'models', FLAGS.model+'.py')
 LOG_DIR = FLAGS.log_dir
-if not os.path.exists(LOG_DIR): os.mkdir(LOG_DIR)
+if not os.path.exists(LOG_DIR):
+    os.mkdir(LOG_DIR)
 os.system('cp %s %s' % (MODEL_FILE, LOG_DIR))  # bkp of model def
 os.system('cp train.py %s' % (LOG_DIR))  # bkp of train procedure
 LOG_FOUT = open(os.path.join(LOG_DIR, 'log_train.txt'), 'w')
@@ -108,12 +111,12 @@ def log_string(out_str):
 
 def get_learning_rate(batch):
     learning_rate = tf.train.exponential_decay(
-                        BASE_LEARNING_RATE,  # Base learning rate.
-                        # batch * BATCH_SIZE,  # Current index into the dataset.
-                        batch,
-                        DECAY_STEP,          # Decay step.
-                        DECAY_RATE,          # Decay rate.
-                        staircase=True)
+        BASE_LEARNING_RATE,  # Base learning rate.
+        # batch * BATCH_SIZE,  # Current index into the dataset.
+        batch,
+        DECAY_STEP,          # Decay step.
+        DECAY_RATE,          # Decay rate.
+        staircase=True)
     # CLIP THE LEARNING RATE!
     learning_rate = tf.maximum(learning_rate, 0.00001)
     return learning_rate
@@ -121,11 +124,11 @@ def get_learning_rate(batch):
 
 def get_bn_decay(batch):
     bn_momentum = tf.train.exponential_decay(
-                      BN_INIT_DECAY,
-                      batch,  # batch*BATCH_SIZE,
-                      BN_DECAY_DECAY_STEP,
-                      BN_DECAY_DECAY_RATE,
-                      staircase=True)
+        BN_INIT_DECAY,
+        batch,  # batch*BATCH_SIZE,
+        BN_DECAY_DECAY_STEP,
+        BN_DECAY_DECAY_RATE,
+        staircase=True)
     bn_decay = tf.minimum(BN_DECAY_CLIP, 1 - bn_momentum)
     return bn_decay
 
@@ -133,8 +136,9 @@ def get_bn_decay(batch):
 def train():
     with tf.Graph().as_default():
         with tf.device('/gpu:'+str(GPU_INDEX)):
-			# batchsize = 1
-            pointclouds_pl, labels_pl, labels_pl_c = MODEL.placeholder_inputs(BATCH_SIZE, NUM_POINT)
+                        # batchsize = 1
+            pointclouds_pl, labels_pl, labels_pl_c = MODEL.placeholder_inputs(
+                BATCH_SIZE, NUM_POINT)
             print(pointclouds_pl, labels_pl)
             # pointclouds_pl, labels_pl = MODEL.placeholder_inputs(None, NUM_POINT)
             is_training_pl = tf.placeholder(tf.bool, shape=())
@@ -146,37 +150,28 @@ def train():
             bn_decay = get_bn_decay(batch)
 
             # filters for real shards and padding shards
-			
+
             #filters = tf.placeholder(dtype=tf.float32, shape=[BATCH_SIZE, 1024])
 
             # Get model and loss
-            pred_c, pred, end_points = MODEL.get_model(pointclouds_pl, is_training_pl, bn_decay=bn_decay)
-            #pred, end_points = MODEL.get_model(pointclouds_pl, filters, is_training_pl, bn_decay=bn_decay)
-            # print("pred.shape: ", pred.shape, "label.shape: ", labels_pl.shape)
-            # print("label.shape: ", labels_pl.shape, "filter.shape: ", filters.shape)
-            # print(filters)
+            pred_c, pred, end_points = MODEL.get_model(
+                pointclouds_pl, is_training_pl, bn_decay=bn_decay)
+ 
+            loss, cls_loss, cls_loss_c, reg_loss = MODEL.get_loss(
+                pred, pred_c, labels_pl, labels_pl_c, end_points)
 
-            #loss = MODEL.get_loss(logits, labels_pl, end_points)
-            loss, cls_loss, cls_loss_c, reg_loss = MODEL.get_loss(pred, pred_c, labels_pl, labels_pl_c, end_points)
-            # loss = MODEL.get_seg_loss(pred, label, end_points)
-            #tf.summary.scalar('loss', loss)
             tf.summary.scalar('loss', loss)
             tf.summary.scalar('cls_loss', cls_loss)
             tf.summary.scalar('cls_loss_c', cls_loss_c)
             tf.summary.scalar('reg_loss', reg_loss)
 
-            #print("pred.shape: ", pred.shape, "label.shape: ", tf.to_int64(labels_pl).shape)
-            # correct = tf.equal(tf.argmax(pred, 0), tf.to_int64(labels_pl))
-            #correct = tf.equal(tf.to_int64(pred),tf.to_int64(labels_pl))
-            #print("correct: ", correct)
 
-            #accuracy = tf.reduce_sum(tf.cast(correct, tf.float32))
-            # tf.summary.scalar('accuracy', accuracy)
-            #total_acc_summary.value.add(tag='train_accuracy', simple_value=total_acc)
-            #val_acc_summary.value.add(tag='test_accuracy', simple_value=val_acc)
-            val_loss_summary.value.add(tag='test_cls_loss', simple_value=val_loss)
-            val_loss_c_summary.value.add(tag='test_cls_loss_c', simple_value=val_loss_c)
-            val_acc_c_summary.value.add(tag='test_cls_acc_c', simple_value=val_acc_c)
+            val_loss_summary.value.add(
+                tag='test_cls_loss', simple_value=val_loss)
+            val_loss_c_summary.value.add(
+                tag='test_cls_loss_c', simple_value=val_loss_c)
+            val_acc_c_summary.value.add(
+                tag='test_cls_acc_c', simple_value=val_acc_c)
 
 #            filter_summary=tf.summary.image(filter)
             # Get training operator
@@ -190,7 +185,8 @@ def train():
                 # optimizer = tf.train.AdamOptimizer(learning_rate)
                 optimizer = tf.train.AdamOptimizer()
 
-            optimizer = tf.contrib.estimator.clip_gradients_by_norm(optimizer, clip_norm=1.0)
+            optimizer = tf.contrib.estimator.clip_gradients_by_norm(
+                optimizer, clip_norm=1.0)
             train_op = optimizer.minimize(loss, global_step=batch)
 
 #            with tf.variable_scope('agg', reuse=True) as scope_conv:
@@ -203,7 +199,7 @@ def train():
 
         # Create a session
         config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
+        # config.gpu_options.allow_growth = True
         config.allow_soft_placement = True
         config.log_device_placement = False
         sess = tf.Session(config=config)
@@ -211,7 +207,7 @@ def train():
         # Add summary writers
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(os.path.join(LOG_DIR, 'train'),
-                                  sess.graph)
+                                             sess.graph)
         test_writer = tf.summary.FileWriter(os.path.join(LOG_DIR, 'test'))
 
         # Init variables
@@ -245,8 +241,8 @@ def train():
                'train_op': train_op,
                'merged': merged,
                'step': batch,
-               #'filters': filters,
-              }
+               # 'filters': filters,
+               }
 
         for epoch in range(MAX_EPOCH):
             log_string('**** EPOCH %03d ****' % (epoch))
@@ -256,7 +252,7 @@ def train():
             eval_loss, eval_loss_c = eval_one_epoch(sess, ops, test_writer)
 
             # Save the variables to disk.
-            #if epoch % 10 == 0:
+            # if epoch % 10 == 0:
             if epoch % 1 == 0:  # save at every epoch
                 save_path = saver.save(sess, os.path.join(
                     LOG_DIR, "model_"+str(epoch)+"_"+str(eval_loss)+"_"+str(eval_loss_c)+".ckpt"))
@@ -269,19 +265,19 @@ def train_one_epoch(sess, ops, train_writer):
 
     # Shuffle train files
     #train_file_idxs = np.arange(0, len(TRAIN_FILES))
-    #np.random.shuffle(train_file_idxs)
+    # np.random.shuffle(train_file_idxs)
     train_files = TRAIN_FILES
-    #print(len(train_files))
+    # print(len(train_files))
     random.shuffle(train_files)
 
     total_correct = 0
     total_seen = 0
     loss_sum = 0
-    total_labels = np.array([0,0,0], dtype=np.int32)
+    total_labels = np.array([0, 0, 0], dtype=np.int32)
 
     gen = provider.data_generator(train_files, BATCH_SIZE)
 
-    #for fn in range(len(TRAIN_FILES)):
+    # for fn in range(len(TRAIN_FILES)):
     for fn in range(125000//BATCH_SIZE):  # total 125000 shards
         # log_string('----' + str(fn) + '-----')
 
@@ -301,113 +297,47 @@ def train_one_epoch(sess, ops, train_writer):
         file_size = BATCH_SIZE
         num_batches = 1
 
-    #         # create filters
-    #         ones = np.ones([file_size, 1024], np.int32)
-    #         zeros = np.zeros([BATCH_SIZE-file_size, 1024], np.int32)
-    # #        #print(ones.shape, zeros.shape)
-    #         if file_size == 20:
-    #             filters = ones
-    #         else:
-    #             filters = np.concatenate([ones, zeros], axis=0)
-    #         # print(filters.shape)
-
-            # # batch_idx => shard idx로 생각
-            # # for batch_idx in range(num_batches):
-            # batch_idx = 0
-            # start_idx = batch_idx * BATCH_SIZE
-            # end_idx = (batch_idx+1) * BATCH_SIZE
-
         current_data = np.array(data_q)
         current_label = np.array(label_q)
         current_seg = np.array(seg_q)
-        #print(current_data.shape, current_label.shape, current_seg.shape)
-
-        #rs_current_data=np.reshape(current_data,(20,2048,3))
-        #rs_current_data=np.reshape(a_data_batch[i][0],(1,2048,3))
-        #rs_seg = np.eye(2)[current_seg[i]] # rs_seg.shape=(4,2)
-        #rs_seg0 = current_seg[i][0]*8+current_seg[i][1]*4+current_seg[i][2]*2+current_seg[i][3]
-#            if a_data_batch[i][1] == 0 or a_data_batch[i][1] == 4:  # pot #1 or #4
-#                rs_seg0 = a_data_batch[i][2][0]*4 + a_data_batch[i][2][3]
-#                if a_data_batch[i][2][1] + a_data_batch[i][2][2] > 0:
-#                    rs_seg0 = rs_seg0 + 2
-#            else:  # pot #2 or #3 or #4
-#                rs_seg0 = a_data_batch[i][2][0]*4 + a_data_batch[i][2][1]*2 + a_data_batch[i][2][2]
-
-        
-#            rs_seg = np.zeros([3,2], dtype=np.float32)
-#            if current_label_i == 0 or current_label_i == 4:  # pot #1 or #4
-            #rs_seg0 = current_seg[i][0]*4 + current_seg[i][3]
-#                rs_seg[0][current_seg_i[0]] = 1
-#                rs_seg[2][current_seg_i[2]] = 1
-#                if current_seg_i[1] + current_seg_i[2] > 0:
-                #rs_seg0 = rs_seg0 + 2
-#                    rs_seg[1][1] = 1 
-#                else:
-#                    rs_seg[1][0] = 1
-#            else:  # pot #2, #3, #4
-            #rs_seg0 = current_seg[i][0]*4 + current_seg[i][1]*2 + current_seg[i][2]
-#                rs_seg = np.eye(2)[current_seg_i[0:3]] # rs_seg.shape=(4,2)
-        #print("rs_seg:", rs_seg.shape)
-
-        #print(rs_seg)
-        #rs_seg = np.eye(16)[rs_seg0] # rs_seg.shape=(4,2)
-        #rs_seg = np.eye(8)[rs_seg0] # rs_seg.shape=(4,2)
-        #print(rs_seg.shape, rs_seg)
-
-        #if current_label_i == 0 or current_label_i == 4:  # pot #1 or #4
-        #    if current_seg_i[0] == 1:
-        #        rs_seg0 = 0
-        #    elif current_seg_i[3] == 1:
-        #        rs_seg0 = 2
-        #    else:
-        #        rs_seg0 = 1
-        #else:
-        #    if current_seg_i[0] == 1:
-        #        rs_seg0 = 0
-        #    elif current_seg_i[2] == 1:
-        #        rs_seg0 = 2
-        #    else:
-        #        rs_seg0 = 1
-        #rs_seg = np.eye(3)[rs_seg0]
 
         rs_label = np.eye(5)[current_label]
         #print(current_label.shape, rs_label.shape, current_label, rs_label)
-        #sys.exit()
+        # sys.exit()
         rs_seg = current_seg
 
         #train_data=np.concatenate((rs_current_data, rs_pottery),axis=0)
-        train_data=current_data
+        train_data = current_data
 
         # Augment batched point clouds by rotation and jittering
-        jittered_data = provider.rotate_perturbation_point_cloud(train_data, angle_sigma= np.pi/2, angle_clip = np.pi)
-        #rotated_data = provider.rotate_point_cloud(train_data)
+        jittered_data = provider.rotate_perturbation_point_cloud(
+            train_data, angle_sigma=np.pi/2, angle_clip=np.pi)
         jittered_data = provider.jitter_point_cloud(jittered_data)
         jittered_data = provider.random_scale_point_cloud(jittered_data)
-        #jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
         jittered_data = provider.shift_point_cloud(jittered_data)
-        #print(jittered_data.shape)
-        #print(rs_seg.shape)
+        # print(jittered_data.shape)
+        # print(rs_seg.shape)
 
         feed_dict = {ops['pointclouds_pl']: jittered_data,
-                    ops['labels_pl']: rs_seg,
-                    ops['labels_pl_c']: rs_label,
-                    ops['is_training_pl']: is_training
-                    }
-        
+                     ops['labels_pl']: rs_seg,
+                     ops['labels_pl_c']: rs_label,
+                     ops['is_training_pl']: is_training
+                     }
+
         summary, step, _, loss_val, pred_val, pred_c_val = sess.run([
-            ops['merged'], 
+            ops['merged'],
             ops['step'],
             ops['train_op'],
             ops['loss'],
-            #ops['cls_loss'],
-            #ops['reg_loss'],
+            # ops['cls_loss'],
+            # ops['reg_loss'],
             ops['pred'],
             ops['pred_c'],
-            ], feed_dict=feed_dict)
+        ], feed_dict=feed_dict)
 
         train_writer.add_summary(summary, step)
-        
-        #correct = np.sum(np.argmax(pred_val) == rs_seg0) 
+
+        #correct = np.sum(np.argmax(pred_val) == rs_seg0)
         #print('pred, label, loss:', np.argmax(pred_val), rs_seg0, loss_val)
         #correct = np.prod(np.argmax(pred_val, axis=1) == np.argmax(rs_seg, axis=1))
         print('loss:', loss_val)
@@ -424,12 +354,13 @@ def train_one_epoch(sess, ops, train_writer):
             print('label_c:', current_label)
             print('pred_c:', np.argmax(pred_c_val, axis=1))
             print('loss_val:', loss_val)
-            correct = np.sum(np.argmax(pred_c_val, axis=1) == np.argmax(rs_label, axis=1))
+            correct = np.sum(np.argmax(pred_c_val, axis=1)
+                             == np.argmax(rs_label, axis=1))
             print('cls_acc_c:', correct)
             #log_string('accuracy: %f' % (total_correct / float(total_seen)))
-        
-            #total_acc_summary.value[0].simple_value=(total_correct/float(total_seen))    
-            #train_writer.add_summary(total_acc_summary,step)
+
+            # total_acc_summary.value[0].simple_value=(total_correct/float(total_seen))
+            # train_writer.add_summary(total_acc_summary,step)
 
     #print("total_labels:", total_labels)
 
@@ -443,19 +374,13 @@ def eval_one_epoch(sess, ops, test_writer):
     loss_sum_c = 0
     total_seen_class = [0 for _ in range(NUM_CLASSES)]
     total_correct_class = [0 for _ in range(NUM_CLASSES)]
-    total_labels = np.array([0,0,0], dtype=np.int32)
-    
+    total_labels = np.array([0, 0, 0], dtype=np.int32)
+
     gen = provider.data_generator(TEST_FILES, BATCH_SIZE)
 
-    #for fn in range(len(TEST_FILES)):
+    # for fn in range(len(TEST_FILES)):
     for fn in range(125000//BATCH_SIZE):  # total 125000 shards
-        
-        # log_string('----' + str(fn) + '-----')
-        #current_data, current_label, current_seg = provider.loadsegDataFile(TEST_FILES[fn])
-        #current_data = current_data[:, 0:NUM_POINT, :]
-        #current_label = np.squeeze(current_label)
-        #current_seg = np.squeeze(current_seg)
-        
+
         data_q, label_q, seg_q = next(gen)
         if data_q == None:
             print("an epoch is done in steps: ", fn)
@@ -470,41 +395,6 @@ def eval_one_epoch(sess, ops, test_writer):
         current_label = np.array(label_q)
         current_seg = np.array(seg_q)
 
-        #rs_current_data=np.reshape(current_data,(1,2048,3))
-        #rs_current_data=np.reshape(a_data_batch[i][0],(1,2048,3))
-        #rs_pottery=np.reshape(pottery[current_label_i],(1,2048,3))
-        #rs_pottery=np.reshape(pottery[a_data_batch[i][1]],(1,2048,3))
-        #rs_seg = np.eye(2)[current_seg[i]] # rs_seg.shape=(4,2)
-        #rs_seg0 = current_seg[i][0]*8+current_seg[i][1]*4+current_seg[i][2]*2+current_seg[i][3]
-        #rs_seg0 = a_data_batch[i][2][0]*8+a_data_batch[i][2][1]*4+a_data_batch[i][2][2]*2+a_data_batch[i][2][3]
-#            if a_data_batch[i][1] == 0 or a_data_batch[i][1] == 4:  # pot #1 or #4
-#                rs_seg0 = a_data_batch[i][2][0]*4 + a_data_batch[i][2][3]
-#                if a_data_batch[i][2][1] + a_data_batch[i][2][2] > 0:
-#                    rs_seg0 = rs_seg0 + 2
-#            else:  # pot #2 or #3 or #4
-#                rs_seg0 = a_data_batch[i][2][0]*4 + a_data_batch[i][2][1]*2 + a_data_batch[i][2][2]
-
-#            if current_label[i] == 0 or current_label[i] == 4:  # pot #1 or #4
-#                rs_seg0 = current_seg[i][0]*4 + current_seg[i][3]
-#                if current_seg[i][1] + current_seg[i][2] > 0:
-#                    rs_seg0 = rs_seg0 + 2
-#            else:  # pot #2, #3, #4
-#                rs_seg0 = current_seg[i][0]*4 + current_seg[i][1]*2 + current_seg[i][2]
-
-#            rs_seg = np.zeros([3,2], dtype=np.float32)
-#            if current_label_i == 0 or current_label_i == 4:  # pot #1 or #4
-            #rs_seg0 = current_seg[i][0]*4 + current_seg[i][3]
-#                rs_seg[0][current_seg_i[0]] = 1
-#                rs_seg[2][current_seg_i[2]] = 1
-#                if current_seg_i[1] + current_seg_i[2] > 0:
-                #rs_seg0 = rs_seg0 + 2
-#                    rs_seg[1][1] = 1 
-#                else:
-#                    rs_seg[1][0] = 1
-#            else:  # pot #2, #3, #4
-            #rs_seg0 = current_seg[i][0]*4 + current_seg[i][1]*2 + current_seg[i][2]
-#                rs_seg = np.eye(2)[current_seg_i[0:3]] # rs_seg.shape=(4,2)
-        #print("rs_seg:", rs_seg)
 
         """
         if current_label_i == 0 or current_label_i == 4:  # pot #1 or #4
@@ -534,34 +424,35 @@ def eval_one_epoch(sess, ops, test_writer):
         rs_seg = current_seg
 
         #test_data=np.concatenate((rs_current_data, rs_pottery),axis=0)
-        test_data=current_data
+        test_data = current_data
 
-        #rotated_data = provider.rotate_point_cloud(test_data)
-        jittered_data = provider.rotate_perturbation_point_cloud(test_data, angle_sigma=np.pi/2, angle_clip=np.pi)
+        jittered_data = provider.rotate_perturbation_point_cloud(
+            test_data, angle_sigma=np.pi/2, angle_clip=np.pi)
         jittered_data = provider.jitter_point_cloud(jittered_data)
         jittered_data = provider.random_scale_point_cloud(jittered_data)
-        #jittered_data = provider.rotate_perturbation_point_cloud(jittered_data)
         jittered_data = provider.shift_point_cloud(jittered_data)
 
         feed_dict = {ops['pointclouds_pl']: jittered_data,
-                    ops['labels_pl']: rs_seg,
-                    ops['labels_pl_c']: rs_label,
-                    ops['is_training_pl']: is_training
-                    }
-        #summary, 
+                     ops['labels_pl']: rs_seg,
+                     ops['labels_pl_c']: rs_label,
+                     ops['is_training_pl']: is_training
+                     }
+        # summary,
         step, cls_loss, cls_loss_c, pred_val, pred_c_val = sess.run([
-            #ops['merged'],
+            # ops['merged'],
             ops['step'],
             ops['cls_loss'],
             ops['cls_loss_c'],
             ops['pred'],
             ops['pred_c'],
-            ], feed_dict=feed_dict)
+        ], feed_dict=feed_dict)
 
-        #correct = np.sum(np.argmax(pred_val) == rs_seg0) 
+        #correct = np.sum(np.argmax(pred_val) == rs_seg0)
         #print(np.argmax(pred_c_val, axis=1), np.argmax(rs_label, axis=1))
-        correct = np.sum(np.argmax(pred_c_val, axis=1) == np.argmax(rs_label, axis=1))
-        print('cls_loss, cls_loss_c, cls_acc_c:', cls_loss, cls_loss_c, correct)
+        correct = np.sum(np.argmax(pred_c_val, axis=1)
+                         == np.argmax(rs_label, axis=1))
+        print('cls_loss, cls_loss_c, cls_acc_c:',
+              cls_loss, cls_loss_c, correct)
         #print('pred, label, loss:', np.argmax(pred_val, axis=1), np.argmax(rs_seg, axis=1), loss_val)
 
         total_correct += correct / float(BATCH_SIZE)
@@ -571,22 +462,18 @@ def eval_one_epoch(sess, ops, test_writer):
         loss_sum_c += cls_loss_c
         #total_labels[rs_seg0] += 1
 
-        
     loss_avg = loss_sum / float(total_seen)
     loss_avg_c = loss_sum_c / float(total_seen)
     acc_avg_c = total_correct / float(total_seen)
     log_string('eval mean cls_loss: %f' % loss_avg)
     log_string('eval mean cls_loss_c: %f' % loss_avg_c)
     log_string('eval mean acc_loss_c: %f' % acc_avg_c)
-    #log_string('eval accuracy: %f'% (total_correct / float(total_seen)))
-#    log_string('eval avg class acc: %f' % (np.mean(np.array(total_correct_class)/np.array(total_seen_class,dtype=np.float))))
-    #val_acc_summary.value[0].simple_value=(total_correct/float(total_seen))    
-    val_loss_summary.value[0].simple_value=(loss_avg)    
-    val_loss_c_summary.value[0].simple_value=(loss_avg_c)    
-    val_acc_c_summary.value[0].simple_value=(acc_avg_c)    
-    test_writer.add_summary(val_loss_summary,step)
-    test_writer.add_summary(val_loss_c_summary,step)
-    test_writer.add_summary(val_acc_c_summary,step)
+    val_loss_summary.value[0].simple_value = (loss_avg)
+    val_loss_c_summary.value[0].simple_value = (loss_avg_c)
+    val_acc_c_summary.value[0].simple_value = (acc_avg_c)
+    test_writer.add_summary(val_loss_summary, step)
+    test_writer.add_summary(val_loss_c_summary, step)
+    test_writer.add_summary(val_acc_c_summary, step)
     test_writer.flush()
     #print("total_labels:", total_labels)
     print('label:', rs_seg)
