@@ -29,11 +29,11 @@ python train_pottery_combined.py
 ---
 
 ## RESULT FIGURE (ex)
-1. classification  
+#### 1. classification  
 ![classification](./images/classification.png)
 
 
-2. location prediction  
+#### 2. location prediction  
 ![segmentation](./images/segmentation.png)
 
 ---
