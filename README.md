@@ -1,7 +1,7 @@
 # IN PROGRESS
 
 ## AIRI_Pottery
-3D classification and segmentation of points cloud data
+3D classification and segmentation (location prediction) of points cloud data
 * Each pottery(label) has various size of shards.  
 * Each Shards has various size of points.  
 
@@ -22,7 +22,7 @@ run npytoh5_seglabel.ipynb ### 도자기 별 shards' *CENTRALIZED* point cloud d
 train: ./train_pottery_combined.py  
 model: ./models/dgcnn+skipdense.py   
 
-python train_pottery_combined.py
+**python train_pottery_combined.py**
 
 
 ## Result Figure (ex)
@@ -36,6 +36,9 @@ python train_pottery_combined.py
 ## EXPERIMENT
 실험 환경: ubuntu 16.04, 64Gmemory, 16core, GPU Tesla V100-SXM2(16G) * 2 (used 1 GPU)  
  
+
+## VISUALIZATION
+./pottery_demo.ipynb
 
 
 
