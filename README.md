@@ -7,9 +7,14 @@
 
 ---
 
-## DATA PREPARING
-1. run make_filelist.ipynb ### 도자기 별 shards list  
-2. run npytoh5_seglabel.ipynb ### 도자기 별 shards' *CENTRALIZED* point cloud data, pottery labels(ID), segmentation_label 생성
+## DATA PREPARING  
+Data원본: AIRI-NAS(http://airi-nas.local:5000/)/Shared/Pottery/pottery_full_data 에 있습니다.  
+
+실제 학습에 필요한 point cloud 데이터는 pottery_full_data의 하위폴더들에 있는 .npy 파일들이며 각 label별로 폴더에 따로 저장해서 사용하시면 됩니다.(make_filelist.ipynb 참고)  
+
+
+1. run make_filelist.ipynb ### 도자기 별 shards list 생성(filelist_라벨_파편수_randomseed_F.txt)  
+2. run npytoh5_seglabel.ipynb ### 도자기 별 shards' *CENTRALIZED* point cloud data, pottery labels(ID), segmentation_label 생성(라벨_파편수_randomseed.h5)
    * segmentation_label: 각 shard의 (y_max, y_mean, y_min) 을 label로 부여
 
 ---
