@@ -8,9 +8,8 @@
 ---
 
 ## DATA PREPARING
-run make_filelist.ipynb ### 도자기 별 shards list  
-~~run npytoh5.ipynb ### 도자기 별 shards' points data 생성 및 train/test files list 생성~~  
-run npytoh5_seglabel.ipynb ### 도자기 별 shards' *CENTRALIZED* point cloud data, lables, segmentation_label 생성  
+1. run make_filelist.ipynb ### 도자기 별 shards list  
+2. run npytoh5_seglabel.ipynb ### 도자기 별 shards' *CENTRALIZED* point cloud data, lables, segmentation_label 생성  
 * segmentation_label: 각 shard의 (y_max, y_mean, y_min) 을 label로 부여
 
 ---
@@ -29,12 +28,12 @@ python train_pottery_combined.py
 
 ---
 
-## Result Figure (ex)
-1) classification  
+## RESULT FIGURE (ex)
+1. classification  
 ![classification](./images/classification.png)
 
 
-2) location prediction  
+2. location prediction  
 ![segmentation](./images/segmentation.png)
 
 ---
