@@ -55,6 +55,11 @@ python train_pottery_combined.py
 
 ## VISUALIZATION
 ./pottery_demo.ipynb
+- required: tetgen library
+```bash
+$ conda insatll -c conda-forge tetgen
+```
+
 
 ---
 
