@@ -9,8 +9,8 @@
 
 ## DATA PREPARING
 1. run make_filelist.ipynb ### 도자기 별 shards list  
-2. run npytoh5_seglabel.ipynb ### 도자기 별 shards' *CENTRALIZED* point cloud data, lables, segmentation_label 생성  
-* segmentation_label: 각 shard의 (y_max, y_mean, y_min) 을 label로 부여
+2. run npytoh5_seglabel.ipynb ### 도자기 별 shards' *CENTRALIZED* point cloud data, pottery labels(ID), segmentation_label 생성
+   * segmentation_label: 각 shard의 (y_max, y_mean, y_min) 을 label로 부여
 
 ---
 
