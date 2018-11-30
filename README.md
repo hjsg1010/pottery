@@ -1,6 +1,5 @@
-# IN PROGRESS
-
-## AIRI_Pottery
+# AIRI_Pottery
+  
 3D classification and segmentation (location prediction) of points cloud data
 * Each pottery(label) has various size of shards.  
 * Each Shards has various size of points.  
@@ -61,8 +60,12 @@ python train_pottery_combined.py
 $ conda insatll -c conda-forge tetgen
 ```
 
-
 ---
+
+## DEMODAY VIDEO
+./demoday_pottery.mkv
+./demodat_pottery.mp4
+
 
 ## Acknowledgement
 This code is heavily borrowed from [dgcnn](https://github.com/WangYueFt/dgcnn), and [pointnet](https://github.com/charlesq34/pointnet)
