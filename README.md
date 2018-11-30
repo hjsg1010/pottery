@@ -63,8 +63,8 @@ $ conda insatll -c conda-forge tetgen
 ---
 
 ## DEMODAY VIDEO
-./demoday_pottery.mkv
-./demodat_pottery.mp4
+./demoday_pottery.mkv  
+./demoday_pottery.mp4
 
 
 ## Acknowledgement
