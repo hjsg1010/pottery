@@ -7,6 +7,7 @@ log_seg/
 *.npy
 log*/
 images/
+old_codes/
 
 ### Media files
 *.mp4
