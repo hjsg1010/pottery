@@ -41,10 +41,12 @@ python train_pottery_combined.py
 ## RESULT FIGURE (ex)
 #### 1. classification  
 <!-- ![classification](./images/classification.png) -->
+<img width="1121" alt="classification" src="https://user-images.githubusercontent.com/17421673/130309158-0bde2a29-8d8c-4fd7-8cce-eb0fd8ab46c2.png">
 
 
 #### 2. location prediction  
 <!-- ![segmentation](./images/segmentation.png) -->
+<img width="987" alt="segmentation" src="https://user-images.githubusercontent.com/17421673/130309167-923f6247-ed85-4d4b-8d71-d326c52c8d46.png">
 
 ---
 
@@ -55,7 +57,9 @@ python train_pottery_combined.py
 ---
 
 ## VISUALIZATION
-./pottery_demo.ipynb
+```
+run pottery_demo.ipynb
+```
 - required: tetgen library  
 
 ```bash
