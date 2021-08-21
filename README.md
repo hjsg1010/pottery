@@ -1,18 +1,25 @@
 # AIRI_Pottery
-  
+ 
 3D classification and segmentation (location prediction) of points cloud data
 * Each pottery(label) has various size of shards.  
 * Each Shards has various size of points.  
+
+We aim to classify shards into different pottery classes and predict a relative location of shards within the pottery using point cloud representation. 
+<img width="867" alt="abstract_figure" src="https://user-images.githubusercontent.com/17421673/130309350-9c01962c-4d32-4664-9d7c-03f3cfbfd3e4.png">
+
 
 ---
 
 ## DATA PREPARING  
 
 We used 3D scanned pottery data in .npy format. 
-```
-data 예시 쓰기
-기영님 논문 data generation 참고
-```
+
+The figure below is an example of the pottery prototype and shards that we actually used.
+<img width="480" alt="original_pottery_shards" src="https://user-images.githubusercontent.com/17421673/130309340-635b0317-fc44-4287-bafb-9c45ef656107.png">
+
+Also, we first generated deep learning models to generate synthetic data using different methods as shown in below figure
+<img width="686" alt="data_generation" src="https://user-images.githubusercontent.com/17421673/130309404-eedbca66-f805-4eec-a9d3-d7469b9dad1c.png">
+
 
 1. run make_filelist.ipynb 
    * generated shards list per each pottery (filelist_label_numofshards_randomseed_F.txt)  
@@ -26,7 +33,10 @@ data 예시 쓰기
 
 ## Model
 
-![model](./images/model.png)
+<!-- ![model](./images/model.png) -->
+
+<img width="952" alt="model_figure" src="https://user-images.githubusercontent.com/17421673/130309265-51801cda-9757-4794-8674-83c307cb3975.png">
+- Simultaneous learning of pottery type classification and relative position prediction
 
   
 - train: ./train_pottery_combined.py  
@@ -57,9 +67,9 @@ python train_pottery_combined.py
 ---
 
 ## VISUALIZATION
-```
-run pottery_demo.ipynb
-```
+
+run *pottery_demo.ipynb*
+
 - required: tetgen library  
 
 ```bash
