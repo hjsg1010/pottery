@@ -1,16 +1,18 @@
-# AIRI_Pottery
+# AIRI Pottery
  
 3D classification and segmentation (location prediction) of points cloud data
 * Each pottery(label) has various size of shards.  
 * Each Shards has various size of points.  
 
 We aim to classify shards into different pottery classes and predict a relative location of shards within the pottery using point cloud representation. 
+
+
 <img width="867" alt="abstract_figure" src="https://user-images.githubusercontent.com/17421673/130309350-9c01962c-4d32-4664-9d7c-03f3cfbfd3e4.png">
 
 
 ---
 
-## DATA PREPARING  
+## Data Preparing
 
 We used 3D scanned pottery data in .npy format. 
 
@@ -21,6 +23,7 @@ Also, we first generated deep learning models to generate synthetic data using d
 <img width="686" alt="data_generation" src="https://user-images.githubusercontent.com/17421673/130309404-eedbca66-f805-4eec-a9d3-d7469b9dad1c.png">
 
 
+#### Data Preprocessing
 1. run make_filelist.ipynb 
    * generated shards list per each pottery (filelist_label_numofshards_randomseed_F.txt)  
 2. run edit_h5_seglabel.ipynb 
@@ -48,25 +51,25 @@ python train_pottery_combined.py
 
 ---
 
-## RESULT FIGURE (ex)
-#### 1. classification  
+## Result Figure (ex)
+#### 1. Classification  
 <!-- ![classification](./images/classification.png) -->
 <img width="1121" alt="classification" src="https://user-images.githubusercontent.com/17421673/130309158-0bde2a29-8d8c-4fd7-8cce-eb0fd8ab46c2.png">
 
 
-#### 2. location prediction  
+#### 2. Location Prediction  
 <!-- ![segmentation](./images/segmentation.png) -->
 <img width="987" alt="segmentation" src="https://user-images.githubusercontent.com/17421673/130309167-923f6247-ed85-4d4b-8d71-d326c52c8d46.png">
 
 ---
 
-## EXPERIMENT
+## Experiment
 - Experiment settings: ubuntu 16.04, 64Gmemory, 16core, GPU Tesla V100-SXM2(16G) (used 1 GPU)  
 - Tensorflow
  
 ---
 
-## VISUALIZATION
+## Visualization
 
 run *pottery_demo.ipynb*
 
